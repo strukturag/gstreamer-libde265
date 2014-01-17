@@ -1,6 +1,10 @@
 gstreamer-libde265
 ====================
 
+Powered by libde265
+
+![powered by libde265](doc/libde265.png)
+
 Compile for gstreamer0.10:
 
     $ make
