@@ -32,4 +32,14 @@ execute:
 Prebuilt packages for Ubuntu are available at
 https://launchpad.net/~strukturag/+archive/libde265
 
+Approximated performance (measured using the totem video
+player on a Intel(R) Core(TM) i7-2700K CPU @ 3.50GHz with
+8 CPU cores on Ubuntu 12.04, 64bit):
+
+| Resolution        | fps     | CPU usage @ 24 fps |
+| ----------------- | ------- | ------------------ |
+| 720p              | 685 fps | ~28 %              |
+| 1080p             | 240 fps | ~80 %              |
+| 4K                | 51 fps  | ~380 %             |
+
 Copyright (c) 2014 struktur AG
