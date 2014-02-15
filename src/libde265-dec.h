@@ -60,6 +60,12 @@ G_BEGIN_DECLS
 #define GST_LIBDE265_DEC_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_LIBDE265_DEC,GstLibde265DecClass))
   
+
+typedef enum {
+  GST_TYPE_LIBDE265_DEC_PACKETIZED,
+  GST_TYPE_LIBDE265_DEC_RAW
+} GstLibde265DecMode;
+
 typedef struct _GstLibde265Dec {
     VIDEO_DECODER_BASE      parent;
 
@@ -67,6 +73,10 @@ typedef struct _GstLibde265Dec {
     de265_decoder_context   *ctx;
     int                     width;
     int                     height;
+    GstLibde265DecMode      mode;
+    int                     fps_n;
+    int                     fps_d;
+    int                     buffer_full;
 #if GST_CHECK_VERSION(1,0,0)
     GstVideoCodecState      *input_state;
 #endif

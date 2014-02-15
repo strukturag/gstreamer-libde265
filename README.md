@@ -29,6 +29,13 @@ execute:
 
     $ gst-launch-0.10 --gst-plugin-path=/path/to/gstreamer-libde265 playbin uri=file:///path/to/sample-hevc.mkv
 
+You can also playback raw H.265/HEVC  bitstreams by switching the decoder
+to raw-mode and passing the desired framerate:
+
+    $ gst-launch-0.10 --gst-plugin-path=/path/to/gstreamer-libde265 \
+        filesrc location=/path/to/sample-bitstream.hevc \
+        ! libde265dec mode=raw framerate=25/1 ! xvimagesink
+
 Prebuilt packages for Ubuntu are available at
 https://launchpad.net/~strukturag/+archive/libde265
 
