@@ -27,7 +27,8 @@ you can override this by passing `LIBDE265_ROOT=/path/to/libde265`.
 To test, make sure the `libde265.so.0` is in your `LD_LIBRARY_PATH` and
 execute:
 
-    $ gst-launch-0.10 --gst-plugin-path=/path/to/gstreamer-libde265 playbin uri=file:///path/to/sample-hevc.mkv
+    $ gst-launch-0.10 --gst-plugin-path=/path/to/gstreamer-libde265 \
+        playbin uri=file:///path/to/sample-hevc.mkv
 
 You can also playback raw H.265/HEVC  bitstreams by switching the decoder
 to raw-mode and passing the desired framerate:
