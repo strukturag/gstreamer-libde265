@@ -381,11 +381,11 @@ static GstFlowReturn gst_libde265_dec_parse_data (VIDEO_DECODER_BASE * parse,
 #endif
 {
     GstLibde265Dec *dec = GST_LIBDE265_DEC (parse);
+    const struct de265_image *img;
     
     if (dec->buffer_full) {
         // return any pending images before decoding more data
-        const struct de265_image *img = de265_peek_next_picture(dec->ctx);
-        if (img != NULL) {
+        if ((img = de265_peek_next_picture(dec->ctx)) != NULL) {
             return _gst_libde265_image_available(parse, img);
         }
         dec->buffer_full = 0;
@@ -441,7 +441,10 @@ static GstFlowReturn gst_libde265_dec_parse_data (VIDEO_DECODER_BASE * parse,
 
     case DE265_ERROR_IMAGE_BUFFER_FULL:
         dec->buffer_full = 1;
-        return HAVE_FRAME (parse);
+        if ((img = de265_peek_next_picture(dec->ctx)) == NULL) {
+            return NEED_DATA_RESULT;
+        }
+        return _gst_libde265_image_available(parse, img);;
 
     case DE265_ERROR_WAITING_FOR_INPUT_DATA:
         return NEED_DATA_RESULT;
@@ -459,8 +462,7 @@ static GstFlowReturn gst_libde265_dec_parse_data (VIDEO_DECODER_BASE * parse,
             (NULL));
     }
     
-    const struct de265_image *img = de265_peek_next_picture(dec->ctx);
-    if (img == NULL) {
+    if ((img = de265_peek_next_picture(dec->ctx)) == NULL) {
         // need more data
         return NEED_DATA_RESULT;
     }
