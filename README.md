@@ -24,6 +24,9 @@ See the header of `Makefile` for dependencies.
 The source build of `libde265` is expected at `../libde265` by default,
 you can override this by passing `LIBDE265_ROOT=/path/to/libde265`.
 
+Prebuilt packages for Ubuntu are available at
+https://launchpad.net/~strukturag/+archive/libde265
+
 To test, make sure the `libde265.so.0` is in your `LD_LIBRARY_PATH` and
 execute:
 
@@ -46,9 +49,6 @@ you have all necessary plugins in the GStreamer plugin path):
 Other commandline switches are available from
 
     $ ./playhevc --help-all
-
-Prebuilt packages for Ubuntu are available at
-https://launchpad.net/~strukturag/+archive/libde265
 
 Approximated performance (measured using the totem video
 player on a Intel(R) Core(TM) i7-2700K CPU @ 3.50GHz with
