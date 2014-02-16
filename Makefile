@@ -49,7 +49,9 @@ LDFLAGS:= \
 OBJS:=$(patsubst %.c,%.o,$(SOURCES))
 MATROSKA_OBJS:=$(patsubst %.c,%.o,$(MATROSKA_SOURCES))
 
-all: libgstlibde265.so
+.PHONY: examples
+
+all: libgstlibde265.so examples
 
 %.o : %.c
 	$(CC) -o $@ -c $< -g $(CFLAGS)
@@ -57,5 +59,9 @@ all: libgstlibde265.so
 libgstlibde265.so: $(OBJS) $(MATROSKA_OBJS)
 	$(CC) -shared -o $@ $^ -g $(LDFLAGS)
 
+examples:
+	cd examples && make GSTREAMER_VERSION=$(GSTREAMER_VERSION)
+
 clean:
 	rm -f libgstlibde265.so $(OBJS) $(MATROSKA_OBJS)
+	cd examples && make clean

@@ -37,6 +37,16 @@ to raw-mode and passing the desired framerate:
         filesrc location=/path/to/sample-bitstream.hevc \
         ! libde265dec mode=raw framerate=25/1 ! xvimagesink
 
+The `examples` folder contains a sample raw bitstream player which can
+be used instead of passing the various options to `gst-launch` (assuming
+you have all necessary plugins in the GStreamer plugin path):
+
+    $ ./playhevc --fps=25 /path/to/sample-bitstream.hevc
+
+Other commandline switches are available from
+
+    $ ./playhevc --help-all
+
 Prebuilt packages for Ubuntu are available at
 https://launchpad.net/~strukturag/+archive/libde265
 
