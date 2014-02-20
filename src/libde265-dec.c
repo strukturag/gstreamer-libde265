@@ -25,9 +25,8 @@
 
 #include "libde265-dec.h"
 
-#if !defined(DE265_ERROR_WAITING_FOR_INPUT_DATA)
-// only available after libde265 0.4
-#define DE265_ERROR_WAITING_FOR_INPUT_DATA  13
+#if defined(LIBDE265_NUMERIC_VERSION) && LIBDE265_NUMERIC_VERSION >= 0x00050000
+#define HAVE_DE265_ERROR_WAITING_FOR_INPUT_DATA
 #endif
 
 // use two decoder threads if no information about
@@ -445,10 +444,10 @@ static GstFlowReturn gst_libde265_dec_parse_data (VIDEO_DECODER_BASE * parse,
             return NEED_DATA_RESULT;
         }
         return _gst_libde265_image_available(parse, img);;
-
+#ifdef HAVE_DE265_ERROR_WAITING_FOR_INPUT_DATA
     case DE265_ERROR_WAITING_FOR_INPUT_DATA:
         return NEED_DATA_RESULT;
-
+#endif
     default:
         GST_ELEMENT_ERROR (parse, STREAM, DECODE,
             ("Error while decoding: %s (code=%d)", de265_get_error_text(ret), ret),
