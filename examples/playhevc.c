@@ -21,6 +21,9 @@
 
 #include <gst/gst.h>
 #include <glib.h>
+#ifdef G_OS_UNIX
+#include <glib-unix.h>
+#endif
 
 static gboolean
 bus_callback(GstBus *bus, GstMessage *msg, gpointer data)
