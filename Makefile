@@ -20,7 +20,9 @@ MATROSKA_SOURCES:= \
 	src/matroska/matroska-read-common.c \
 	src/matroska/lzo.c
 
-CC:=gcc
+ifeq ($(origin CC), default)
+	CC := gcc
+endif
 
 LDFLAGS_GSTREAMER:=$(shell pkg-config --libs gstreamer-video-$(GSTREAMER_VERSION))
 CFLAGS_GSTREAMER:=$(shell pkg-config --cflags gstreamer-video-$(GSTREAMER_VERSION))
@@ -60,7 +62,7 @@ libgstlibde265.so: $(OBJS) $(MATROSKA_OBJS)
 	$(CC) -shared -o $@ $^ -g $(LDFLAGS)
 
 examples:
-	cd examples && make GSTREAMER_VERSION=$(GSTREAMER_VERSION)
+	cd examples && make GSTREAMER_VERSION=$(GSTREAMER_VERSION) CC=$(CC)
 
 clean:
 	rm -f libgstlibde265.so $(OBJS) $(MATROSKA_OBJS)
