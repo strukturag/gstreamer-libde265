@@ -1,9 +1,12 @@
-gstreamer-libde265
-====================
+# gstreamer-libde265
 
 Powered by libde265
 
 ![powered by libde265](doc/libde265.png)
+
+## Building
+
+[![Build Status](https://travis-ci.org/strukturag/gstreamer-libde265.png?branch=master)](https://travis-ci.org/strukturag/gstreamer-libde265)
 
 Compile for gstreamer0.10:
 
@@ -26,6 +29,8 @@ you can override this by passing `LIBDE265_ROOT=/path/to/libde265`.
 
 Prebuilt packages for Ubuntu are available at
 https://launchpad.net/~strukturag/+archive/libde265
+
+## Running
 
 To test, make sure the `libde265.so.0` is in your `LD_LIBRARY_PATH` and
 execute:
