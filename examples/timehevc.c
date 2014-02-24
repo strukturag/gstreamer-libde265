@@ -19,6 +19,7 @@
  * along with libde265.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
 
@@ -246,8 +247,12 @@ main(int argc, char *argv[])
 
     int movie_fps = 24;  // TOOD: get this from pipeline/demuxer/decoder somehow
     gint64 pos;
+#if GST_CHECK_VERSION(1,0,0)
+    gst_element_query_position(pipeline, GST_FORMAT_TIME, &pos);
+#else
     GstFormat query = GST_FORMAT_TIME;
     gst_element_query_position(pipeline, &query, &pos);
+#endif
     gint64 frames = movie_fps * (pos / 1000000000.0);
     printf("Played %.3f seconds (%ld frames)\n", pos / 1000000000.0, frames);
 
