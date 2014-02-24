@@ -7,9 +7,12 @@ endif
 CFLAGS_GSTREAMER:=$(shell pkg-config --cflags gstreamer-$(GSTREAMER_VERSION))
 LDFLAGS_GSTREAMER:=$(shell pkg-config --libs gstreamer-$(GSTREAMER_VERSION))
 
-all: playhevc
+all: playhevc timehevc
 
 playhevc: playhevc.c
+	$(CC) -g -o $@ $< $(CFLAGS_GSTREAMER) $(LDFLAGS_GSTREAMER)
+
+timehevc: timehevc.c
 	$(CC) -g -o $@ $< $(CFLAGS_GSTREAMER) $(LDFLAGS_GSTREAMER)
 
 clean:
