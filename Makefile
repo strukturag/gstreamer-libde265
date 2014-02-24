@@ -39,6 +39,7 @@ endif
 CFLAGS:= \
 	-fPIC \
 	-Wall \
+	-O2 \
 	-I$(LIBDE265_ROOT) \
 	-DGST_USE_UNSTABLE_API \
 	$(CFLAGS_GSTREAMER)
