@@ -61,11 +61,11 @@ Decoder performance was measured using the `timehevc` tool from the `examples`
 folder. The tool plays a Matroska movie to the GStreamer fakesink and measures
 the average framerate.
 
-| Resolution        | avg. fps |
-| ----------------- | -------- |
-| [720p][1]         |  259 fps |
-| [1080p][2]        |  135 fps |
-| [4K][3]           |   31 fps |
+| Resolution        | avg. fps | CPU usage |
+| ----------------- | -------- | --------- |
+| [720p][1]         |  259 fps |      37 % |
+| [1080p][2]        |  135 fps |      42 % |
+| [4K][3]           |   31 fps |      49 % |
 
 Environment:
 - Intel(R) Core(TM) i7-2700K CPU @ 3.50GHz (4 physical CPU cores)
