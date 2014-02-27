@@ -58,8 +58,8 @@ Other commandline switches are available from
 ## Performance
 
 Decoder performance was measured using the `timehevc` tool from the `examples`
-folder. The tool plays a Matroska movie to the GStreamer fakesink, measures
-the average framerate and calculates the max. framerate for 100% CPU usage.
+folder. The tool plays a Matroska movie to the GStreamer fakesink and measures
+the average framerate.
 
 | Resolution        | avg. fps |
 | ----------------- | -------- |
