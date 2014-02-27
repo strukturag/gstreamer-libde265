@@ -55,14 +55,25 @@ Other commandline switches are available from
 
     $ ./playhevc --help-all
 
-Approximated performance (measured using the totem video
-player on a Intel(R) Core(TM) i7-2700K CPU @ 3.50GHz with
-8 CPU cores on Ubuntu 12.04, 64bit):
+## Performance
 
-| Resolution        | fps     | CPU usage @ 24 fps |
-| ----------------- | ------- | ------------------ |
-| 720p              | 685 fps | ~28 %              |
-| 1080p             | 240 fps | ~80 %              |
-| 4K                | 51 fps  | ~380 %             |
+Decoder performance was measured using the `timehevc` tool from the `examples`
+folder. The tool plays a Matroska movie to the GStreamer fakesink, measures
+the average framerate and calculates the max. framerate for 100% CPU usage.
+
+| Resolution        | avg. fps |
+| ----------------- | -------- |
+| [720p][1]         |  259 fps |
+| [1080p][2]        |  135 fps |
+| [4K][3]           |   31 fps |
+
+Environment:
+- Intel(R) Core(TM) i7-2700K CPU @ 3.50GHz (4 physical CPU cores)
+- Ubuntu 12.04, 64bit
+- GStreamer 0.10.36
+
+[1]: http://trailers.divx.com/hevc/TearsOfSteel_720p_24fps_27qp_831kbps_720p_GPSNR_41.65_HM11_2aud_7subs.mkv
+[2]: http://trailers.divx.com/hevc/TearsOfSteel_1080p_24fps_27qp_1474kbps_GPSNR_42.29_HM11_2aud_7subs.mkv
+[3]: http://trailers.divx.com/hevc/TearsOfSteel_4K_24fps_9500kbps_2aud_9subs.mkv
 
 Copyright (c) 2014 struktur AG
