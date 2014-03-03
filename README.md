@@ -63,9 +63,9 @@ the average framerate.
 
 | Resolution        | avg. fps | CPU usage |
 | ----------------- | -------- | --------- |
-| [720p][1]         |  259 fps |      37 % |
-| [1080p][2]        |  135 fps |      42 % |
-| [4K][3]           |   31 fps |      49 % |
+| [720p][1]         |  284 fps |      39 % |
+| [1080p][2]        |  150 fps |      45 % |
+| [4K][3]           |   36 fps |      56 % |
 
 Environment:
 - Intel(R) Core(TM) i7-2700K CPU @ 3.50GHz (4 physical CPU cores)
