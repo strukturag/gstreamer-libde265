@@ -307,6 +307,8 @@ gst_libde265_dec_start (VIDEO_DECODER_BASE * parse)
     de265_start_worker_threads(dec->ctx, threads);
     GST_INFO ("Starting %d worker threads\n", threads);
     
+    // NOTE: we explicitly disable hash checks for now
+    de265_set_parameter_bool(dec->ctx, DE265_DECODER_PARAM_BOOL_SEI_CHECK_HASH, 0);
     return TRUE;
 }
 
