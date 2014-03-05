@@ -54,9 +54,7 @@ static GstStaticPadTemplate sink_template = GST_STATIC_PAD_TEMPLATE (
     "sink",
     GST_PAD_SINK,
     GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("video/x-h265, " \
-        "mode = (string) {packetized, raw}, " \
-        "framerate = (fraction) [0/1, MAX]")
+    GST_STATIC_CAPS ("video/x-h265")
     );
 
 static GstStaticPadTemplate src_template = GST_STATIC_PAD_TEMPLATE (
