@@ -527,10 +527,19 @@ static GstFlowReturn gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse,
     int plane;
     for (plane=0; plane<3; plane++) {
         int stride;
+        int width = de265_get_image_width(img, plane);
         int height = de265_get_image_height(img, plane);
         const uint8_t *src = de265_get_image_plane(img, plane, &stride);
-        memcpy(dest, src, height * stride);
-        dest += (height * stride);
+        if (stride == width) {
+            memcpy(dest, src, height * stride);
+            dest += (height * stride);
+        } else {
+            while (height--) {
+                memcpy(dest, src, width);
+                src += stride;
+                dest += width;
+            }
+        }
     }
 #if GST_CHECK_VERSION(1,0,0)
     gst_buffer_unmap(frame->output_buffer, &info);
