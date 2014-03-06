@@ -42,11 +42,15 @@ CFLAGS:= \
 	-O2 \
 	-I$(LIBDE265_ROOT) \
 	-DGST_USE_UNSTABLE_API \
+	-DHAVE_ZLIB \
+	-DHAVE_BZ2 \
 	$(CFLAGS_GSTREAMER)
 
 LDFLAGS:= \
 	-L$(LIBDE265_ROOT)/libde265/.libs \
 	-lde265 \
+	-lz \
+	-lbz2 \
 	$(LDFLAGS_GSTREAMER)
 
 OBJS:=$(patsubst %.c,%.o,$(SOURCES))
