@@ -49,7 +49,7 @@ noinst_HEADERS = \
 	matroska/$(USE_GSTREAMER_VERSION)/matroska-read-common.h
 
 EXTRA_DIST = \
-	 matroska/*/*.c \
+	matroska/*/*.c \
 	matroska/*/*.h \
 	matroska/*/COPYING \
 	matroska/*/README.txt \
