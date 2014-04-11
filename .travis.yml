@@ -26,3 +26,4 @@ script:
   - gst-codec-info-$GSTREAMER `pwd`/src/.libs/libgstlibde265.so
   - gst-inspect-$GSTREAMER --gst-plugin-path=`pwd`/src/.libs/ gstlibde265
   - gst-launch-$GSTREAMER --gst-plugin-path=`pwd`/src/.libs/ filesrc location=`pwd`/libde265-data/RandomAccess/paris-ra-wpp.bin ! libde265dec mode=raw ! fakesink sync=false
+  - ./examples/timehevc --gst-plugin-path=`pwd`/src/.libs/ `pwd`/examples/spreedmovie.mkv
