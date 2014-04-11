@@ -323,14 +323,7 @@ static gboolean gst_libde265_dec_reset (VIDEO_DECODER_BASE * parse)
 {
     GstLibde265Dec *dec = GST_LIBDE265_DEC (parse);
 
-    // TODO: this should really use "de265_reset" (which currently
-    // invalidates the context state for multithreaded usage)
-
-    // flush any pending decoded images
-    const struct de265_image *img;
-    do {
-        img = de265_get_next_picture(dec->ctx);
-    } while (img != NULL);
+    de265_reset(dec->ctx);
     dec->buffer_full = 0;
 
     return TRUE;
