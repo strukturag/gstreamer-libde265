@@ -15,3 +15,6 @@ timehevc_CFLAGS = \
 timehevc_LDFLAGS = \
 	$(GST_LDFLAGS) \
 	$(GST_LIBS)
+
+EXTRA_DIST = \
+	spreedmovie.mkv
