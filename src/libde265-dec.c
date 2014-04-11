@@ -25,8 +25,8 @@
 
 #include "libde265-dec.h"
 
-#if !defined(LIBDE265_NUMERIC_VERSION)
-#define LIBDE265_NUMERIC_VERSION 0x00040000
+#if !defined(LIBDE265_NUMERIC_VERSION) || LIBDE265_NUMERIC_VERSION < 0x00060000
+#error "You need libde265 0.6 or newer to compile this plugin."
 #endif
 
 // use two decoder threads if no information about
@@ -38,14 +38,6 @@
                (((const uint8_t*)(x))[1] << 16) |    \
                (((const uint8_t*)(x))[2] <<  8) |    \
                 ((const uint8_t*)(x))[3])
-
-#define WRITE_BE32(p, darg) do {                \
-        unsigned d = (darg);                    \
-        ((uint8_t*)(p))[3] = (d);               \
-        ((uint8_t*)(p))[2] = (d)>>8;            \
-        ((uint8_t*)(p))[1] = (d)>>16;           \
-        ((uint8_t*)(p))[0] = (d)>>24;           \
-    } while(0)
 
 #define parent_class gst_libde265_dec_parent_class
 G_DEFINE_TYPE (GstLibde265Dec, gst_libde265_dec, VIDEO_DECODER_TYPE);
@@ -393,15 +385,11 @@ static GstFlowReturn gst_libde265_dec_parse_data (VIDEO_DECODER_BASE * parse,
     GstLibde265Dec *dec = GST_LIBDE265_DEC (parse);
     const struct de265_image *img;
     de265_error ret = DE265_OK;
-#if LIBDE265_NUMERIC_VERSION >= 0x00050000
     int more = 0;
-#endif
-#if LIBDE265_NUMERIC_VERSION >= 0x00050000
-    #if GST_CHECK_VERSION(1,0,0)
-        de265_PTS pts = (de265_PTS) frame->pts;
-    #else
-        de265_PTS pts = 0;
-    #endif
+#if GST_CHECK_VERSION(1,0,0)
+    de265_PTS pts = (de265_PTS) frame->pts;
+#else
+    de265_PTS pts = 0;
 #endif
     
     if (dec->buffer_full) {
@@ -447,7 +435,6 @@ static GstFlowReturn gst_libde265_dec_parse_data (VIDEO_DECODER_BASE * parse,
                         (NULL));
                     goto error;
                 }
-#if LIBDE265_NUMERIC_VERSION >= 0x00050000
                 ret = de265_push_NAL(dec->ctx, start_data + 4, nal_size, pts, NULL);
                 if (ret != DE265_OK) {
                     GST_ELEMENT_ERROR (parse, STREAM, DECODE,
@@ -455,30 +442,19 @@ static GstFlowReturn gst_libde265_dec_parse_data (VIDEO_DECODER_BASE * parse,
                         (NULL));
                     goto error;
                 }
-#else
-                WRITE_BE32(start_data, 0x00000001);
-#endif
                 start_data += 4 + nal_size;
             }
-#if LIBDE265_NUMERIC_VERSION >= 0x00050000
         } else {
             ret = de265_push_data(dec->ctx, frame_data, size, pts, NULL);
-#endif
         }
     } else {
-#if LIBDE265_NUMERIC_VERSION >= 0x00050000
         ret = de265_flush_data(dec->ctx);
-#endif
     }
     
-#if LIBDE265_NUMERIC_VERSION < 0x00050000
-    ret = de265_decode_data(dec->ctx, frame_data, size);
-#else
     // decode as much as possible
     do {
         ret = de265_decode(dec->ctx, &more);
     } while (more && ret == DE265_OK);
-#endif
 #if GST_CHECK_VERSION(1,0,0)
     gst_buffer_unmap(buf, &info);
 #endif
@@ -493,10 +469,10 @@ static GstFlowReturn gst_libde265_dec_parse_data (VIDEO_DECODER_BASE * parse,
             return NEED_DATA_RESULT;
         }
         return _gst_libde265_image_available(parse, img);;
-#if LIBDE265_NUMERIC_VERSION >= 0x00050000
+
     case DE265_ERROR_WAITING_FOR_INPUT_DATA:
         return NEED_DATA_RESULT;
-#endif
+
     default:
         GST_ELEMENT_ERROR (parse, STREAM, DECODE,
             ("Error while decoding: %s (code=%d)", de265_get_error_text(ret), ret),
@@ -591,8 +567,6 @@ static GstFlowReturn gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse,
     }
 #if GST_CHECK_VERSION(1,0,0)
     gst_buffer_unmap(frame->output_buffer, &info);
-#endif
-#if LIBDE265_NUMERIC_VERSION >= 0x00050000 && GST_CHECK_VERSION(1,0,0)
     frame->pts = (GstClockTime) de265_get_image_PTS(img);
 #endif
     
