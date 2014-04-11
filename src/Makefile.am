@@ -51,5 +51,6 @@ noinst_HEADERS = \
 EXTRA_DIST = \
 	 matroska/*/*.c \
 	matroska/*/*.h \
+	matroska/*/COPYING \
 	matroska/*/README.txt \
 	matroska/*/*.diff
