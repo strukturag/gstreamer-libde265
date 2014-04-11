@@ -41,7 +41,6 @@ plugin_init(GstPlugin *plugin)
 {
     gboolean ret;
 
-    de265_init();
     gst_pb_utils_init();
     gst_matroska_register_tags();
 
