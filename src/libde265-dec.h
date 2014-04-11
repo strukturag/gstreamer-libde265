@@ -22,6 +22,10 @@
 #ifndef __GST_LIBDE265_DEC_H__
 #define __GST_LIBDE265_DEC_H__
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <gst/gst.h>
 #if GST_CHECK_VERSION(1,0,0)
     #include <gst/video/gstvideodecoder.h>

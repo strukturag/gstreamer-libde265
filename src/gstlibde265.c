@@ -19,6 +19,10 @@
  * along with libde265.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <gst/pbutils/pbutils.h>
 
 #include <gst/gst.h>
@@ -49,14 +53,6 @@ plugin_init(GstPlugin *plugin)
     ret &= gst_libde265_dec_plugin_init (plugin);
     return ret;
 }
-
-#ifndef VERSION
-#define VERSION     "0.1.4"
-#endif
-
-#ifndef PACKAGE
-#define PACKAGE     "gstreamer-libde265"
-#endif
 
 GST_PLUGIN_DEFINE (
     GST_VERSION_MAJOR,

@@ -20,7 +20,9 @@ install:
   - git clone https://github.com/strukturag/libde265-data.git
 
 script:
-  - make GSTREAMER_VERSION=$GSTREAMER
-  - LD_LIBRARY_PATH=`pwd` gst-codec-info-$GSTREAMER libgstlibde265.so
-  - gst-inspect-$GSTREAMER --gst-plugin-path=`pwd` libgstlibde265.so
-  - gst-launch-$GSTREAMER --gst-plugin-path=`pwd` filesrc location=`pwd`/libde265-data/RandomAccess/paris-ra-wpp.bin ! libde265dec mode=raw ! fakesink sync=false
+  - ./autogen.sh
+  - ./configure --enable-gstreamer$GSTREAMER
+  - make
+  - gst-codec-info-$GSTREAMER `pwd`/src/.libs/libgstlibde265.so
+  - gst-inspect-$GSTREAMER --gst-plugin-path=`pwd`/src/.libs/ gstlibde265
+  - gst-launch-$GSTREAMER --gst-plugin-path=`pwd`/src/.libs/ filesrc location=`pwd`/libde265-data/RandomAccess/paris-ra-wpp.bin ! libde265dec mode=raw ! fakesink sync=false
