@@ -159,9 +159,6 @@ main(int argc, char *argv[])
     GstElement *pipeline;
     GstBus *bus;
     guint bus_watch_id;
-#ifdef G_OS_UNIX
-    guint signal_watch_id;
-#endif
     GOptionEntry options[] = {
         {NULL}
     };
@@ -221,7 +218,7 @@ main(int argc, char *argv[])
     bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
     bus_watch_id = gst_bus_add_watch(bus, bus_callback, loop);
 #ifdef G_OS_UNIX
-    signal_watch_id = g_unix_signal_add(SIGINT, (GSourceFunc) sigint_handler, pipeline);
+    g_unix_signal_add(SIGINT, (GSourceFunc) sigint_handler, pipeline);
 #endif
 
     gst_bin_add_many(GST_BIN(pipeline), source, demuxer, decoder, sink, NULL);
