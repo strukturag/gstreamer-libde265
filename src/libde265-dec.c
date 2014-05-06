@@ -232,12 +232,12 @@ static void gst_libde265_dec_set_property (GObject * object, guint prop_id,
     switch (prop_id) {
     case PROP_MODE:
         dec->mode = g_value_get_enum (value);
-        GST_DEBUG ("Mode set to %d\n", dec->mode);
+        GST_DEBUG ("Mode set to %d", dec->mode);
         break;
     case PROP_FRAMERATE:
         dec->fps_n = gst_value_get_fraction_numerator(value);
         dec->fps_d = gst_value_get_fraction_denominator(value);
-        GST_DEBUG ("Framerate set to %d/%d\n", dec->fps_n, dec->fps_d);
+        GST_DEBUG ("Framerate set to %d/%d", dec->fps_n, dec->fps_d);
         break;
     default:
         break;
@@ -294,7 +294,7 @@ gst_libde265_dec_start (VIDEO_DECODER_BASE * parse)
         threads = 32;
     }
     de265_start_worker_threads(dec->ctx, threads);
-    GST_INFO ("Starting %d worker threads\n", threads);
+    GST_INFO ("Starting %d worker threads", threads);
     
     // NOTE: we explicitly disable hash checks for now
     de265_set_parameter_bool(dec->ctx, DE265_DECODER_PARAM_BOOL_SEI_CHECK_HASH, 0);
@@ -390,7 +390,7 @@ static GstFlowReturn _gst_libde265_image_available(VIDEO_DECODER_BASE * parse,
         }
         gst_base_video_decoder_set_src_caps (parse);
 #endif
-        GST_DEBUG ("Frame dimensions are %d x %d\n", width, height);
+        GST_DEBUG ("Frame dimensions are %d x %d", width, height);
         dec->width = width;
         dec->height = height;
     }
