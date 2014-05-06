@@ -20,6 +20,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -32,12 +33,6 @@
 // use two decoder threads if no information about
 // available CPU cores can be retrieved
 #define DEFAULT_THREAD_COUNT        2
-
-#define READ_BE32(x)                                 \
-    (((uint32_t)((const uint8_t*)(x))[0] << 24) |    \
-               (((const uint8_t*)(x))[1] << 16) |    \
-               (((const uint8_t*)(x))[2] <<  8) |    \
-                ((const uint8_t*)(x))[3])
 
 #define parent_class gst_libde265_dec_parent_class
 G_DEFINE_TYPE (GstLibde265Dec, gst_libde265_dec, VIDEO_DECODER_TYPE);
@@ -109,12 +104,12 @@ static GstFlowReturn gst_libde265_dec_parse (VIDEO_DECODER_BASE * parse,
     VIDEO_FRAME *frame,
     GstAdapter *adapter,
     gboolean at_eos);
-static gboolean gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse,
-    GstVideoCodecState * state);
 #else
 static GstFlowReturn gst_libde265_dec_parse_data (VIDEO_DECODER_BASE * parse,
     gboolean at_eos);
 #endif
+static gboolean gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse,
+    VIDEO_STATE * state);
 #if GST_CHECK_VERSION(1,2,0)
 static gboolean gst_libde265_dec_flush (VIDEO_DECODER_BASE * parse);
 #elif GST_CHECK_VERSION(1,0,0)
@@ -154,10 +149,10 @@ gst_libde265_dec_class_init (GstLibde265DecClass * klass)
     decoder_class->stop = GST_DEBUG_FUNCPTR (gst_libde265_dec_stop);
 #if GST_CHECK_VERSION(1,0,0)
     decoder_class->parse = GST_DEBUG_FUNCPTR (gst_libde265_dec_parse);
-    decoder_class->set_format = GST_DEBUG_FUNCPTR (gst_libde265_dec_set_format);
 #else
     decoder_class->parse_data = GST_DEBUG_FUNCPTR (gst_libde265_dec_parse_data);
 #endif
+    decoder_class->set_format = GST_DEBUG_FUNCPTR (gst_libde265_dec_set_format);
 #if GST_CHECK_VERSION(1,2,0)
     decoder_class->flush = GST_DEBUG_FUNCPTR (gst_libde265_dec_flush);
 #else
@@ -184,6 +179,8 @@ _gst_libde265_dec_reset_decoder (GstLibde265Dec * dec)
     dec->width = -1;
     dec->height = -1;
     dec->buffer_full = 0;
+    dec->codec_data = NULL;
+    dec->codec_data_size = 0;
 #if GST_CHECK_VERSION(1,0,0)
     dec->input_state = NULL;
 #endif
@@ -195,6 +192,7 @@ gst_libde265_dec_init (GstLibde265Dec * dec)
     dec->mode = DEFAULT_MODE;
     dec->fps_n = DEFAULT_FPS_N;
     dec->fps_d = DEFAULT_FPS_D;
+    dec->length_size = 4;
     _gst_libde265_dec_reset_decoder (dec);
 #if GST_CHECK_VERSION(1,0,0)
     gst_video_decoder_set_packetized(GST_VIDEO_DECODER(dec), FALSE);
@@ -207,6 +205,7 @@ _gst_libde265_dec_free_decoder (GstLibde265Dec *dec)
     if (dec->ctx != NULL) {
         de265_free_decoder(dec->ctx);
     }
+    free(dec->codec_data);
 #if GST_CHECK_VERSION(1,0,0)
     if (dec->input_state != NULL) {
         gst_video_codec_state_unref(dec->input_state);
@@ -325,6 +324,40 @@ static gboolean gst_libde265_dec_reset (VIDEO_DECODER_BASE * parse)
 
     de265_reset(dec->ctx);
     dec->buffer_full = 0;
+    if (dec->codec_data != NULL && dec->mode == GST_TYPE_LIBDE265_DEC_RAW) {
+        int more;
+        de265_error err = de265_push_data(dec->ctx, dec->codec_data, dec->codec_data_size, 0, NULL);
+        if (!de265_isOK(err)) {
+            GST_ELEMENT_ERROR (parse, STREAM, DECODE,
+                ("Failed to push codec data: %s (code=%d)", de265_get_error_text(err), err),
+                (NULL));
+            return FALSE;
+        }
+#if LIBDE265_NUMERIC_VERSION >= 0x00070000
+        de265_push_end_of_NAL(dec->ctx);
+#endif
+        do {
+            err = de265_decode(dec->ctx, &more);
+            switch (err) {
+            case DE265_OK:
+                break;
+
+            case DE265_ERROR_IMAGE_BUFFER_FULL:
+            case DE265_ERROR_WAITING_FOR_INPUT_DATA:
+                // not really an error
+                more = 0;
+                break;
+
+            default:
+                if (!de265_isOK(err)) {
+                    GST_ELEMENT_ERROR (parse, STREAM, DECODE,
+                        ("Failed to decode codec data: %s (code=%d)", de265_get_error_text(err), err),
+                        (NULL));
+                    return FALSE;
+                }
+            }
+        } while (more);
+    }
 
     return TRUE;
 }
@@ -400,7 +433,7 @@ static GstFlowReturn gst_libde265_dec_parse_data (VIDEO_DECODER_BASE * parse,
     if (size == 0) {
         return NEED_DATA_RESULT;
     }
-    
+
     GstBuffer *buf = gst_adapter_take_buffer(adapter, size);
     uint8_t *frame_data;
     uint8_t *end_data;
@@ -418,24 +451,28 @@ static GstFlowReturn gst_libde265_dec_parse_data (VIDEO_DECODER_BASE * parse,
     
     if (size > 0) {
         if (dec->mode == GST_TYPE_LIBDE265_DEC_PACKETIZED) {
-            // replace 4-byte length fields with NAL start codes
+            // stream contains length fields and NALs
             uint8_t *start_data = frame_data;
-            while (start_data + 4 <= end_data) {
-                int nal_size = READ_BE32(start_data);
-                if (start_data + nal_size > end_data) {
+            while (start_data + dec->length_size <= end_data) {
+                int nal_size = 0;
+                int i;
+                for (i=0; i<dec->length_size; i++) {
+                    nal_size = (nal_size << 8) | start_data[i];
+                }
+                if (start_data + dec->length_size + nal_size > end_data) {
                     GST_ELEMENT_ERROR (parse, STREAM, DECODE,
                         ("Overflow in input data, check data mode"),
                         (NULL));
                     goto error;
                 }
-                ret = de265_push_NAL(dec->ctx, start_data + 4, nal_size, pts, NULL);
+                ret = de265_push_NAL(dec->ctx, start_data + dec->length_size, nal_size, pts, NULL);
                 if (ret != DE265_OK) {
                     GST_ELEMENT_ERROR (parse, STREAM, DECODE,
                         ("Error while pushing data: %s (code=%d)", de265_get_error_text(ret), ret),
                         (NULL));
                     goto error;
                 }
-                start_data += 4 + nal_size;
+                start_data += dec->length_size + nal_size;
             }
         } else {
             ret = de265_push_data(dec->ctx, frame_data, size, pts, NULL);
@@ -494,12 +531,12 @@ error:
     return GST_FLOW_ERROR;
 }
 
-#if GST_CHECK_VERSION(1,0,0)
 static gboolean gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse,
-    GstVideoCodecState * state)
+    VIDEO_STATE * state)
 {
     GstLibde265Dec *dec = GST_LIBDE265_DEC (parse);
 
+#if GST_CHECK_VERSION(1,0,0)
     if (dec->input_state != NULL) {
         gst_video_codec_state_unref(dec->input_state);
     }
@@ -507,10 +544,92 @@ static gboolean gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse,
     if (state != NULL) {
         gst_video_codec_state_ref(state);
     }
-    
+#endif
+    if (state != NULL && state->caps != NULL) {
+        GstStructure *str;
+        const GValue *value;
+        str = gst_caps_get_structure (state->caps, 0);
+        if ((value = gst_structure_get_value (str, "codec_data"))) {
+#if GST_CHECK_VERSION(1,0,0)
+            GstMapInfo info;
+#endif
+            guint8 *data;
+            gsize size;
+            GstBuffer *buf;
+            de265_error err;
+            int more;
+
+            buf = gst_value_get_buffer (value);
+#if GST_CHECK_VERSION(1,0,0)
+            if (!gst_buffer_map (buf, &info, GST_MAP_READ)) {
+                GST_ELEMENT_ERROR (parse, STREAM, DECODE,
+                    ("Failed to map codec data"),
+                    (NULL));
+                return FALSE;
+            }
+            data = info.data;
+            size = info.size;
+#else
+            data = GST_BUFFER_DATA(buf);
+            size = GST_BUFFER_SIZE(buf);
+#endif
+            free(dec->codec_data);
+            dec->codec_data = malloc(size);
+            g_assert(dec->codec_data != NULL);
+            dec->codec_data_size = size;
+            memcpy(dec->codec_data, data, size);
+            if (size > 3 && (data[0] || data[1] || data[2] > 1)) {
+                dec->mode = GST_TYPE_LIBDE265_DEC_PACKETIZED;
+                if (size > 21) {
+                    dec->length_size = (data[21] & 3) + 1;
+                }
+                GST_DEBUG ("Assuming packetized data (%d bytes length)", dec->length_size);
+            } else {
+                dec->mode = GST_TYPE_LIBDE265_DEC_RAW;
+                GST_DEBUG ("Assuming non-packetized data");
+                err = de265_push_data(dec->ctx, data, size, 0, NULL);
+                if (!de265_isOK(err)) {
+#if GST_CHECK_VERSION(1,0,0)
+                    gst_buffer_unmap(buf, &info);
+#endif
+                    GST_ELEMENT_ERROR (parse, STREAM, DECODE,
+                        ("Failed to push codec data: %s (code=%d)", de265_get_error_text(err), err),
+                        (NULL));
+                    return FALSE;
+                }
+            }
+#if GST_CHECK_VERSION(1,0,0)
+            gst_buffer_unmap(buf, &info);
+#endif
+#if LIBDE265_NUMERIC_VERSION >= 0x00070000
+            de265_push_end_of_NAL(dec->ctx);
+#endif
+            do {
+                err = de265_decode(dec->ctx, &more);
+                switch (err) {
+                case DE265_OK:
+                    break;
+
+                case DE265_ERROR_IMAGE_BUFFER_FULL:
+                case DE265_ERROR_WAITING_FOR_INPUT_DATA:
+                    // not really an error
+                    more = 0;
+                    break;
+
+                default:
+                    if (!de265_isOK(err)) {
+                        GST_ELEMENT_ERROR (parse, STREAM, DECODE,
+                            ("Failed to decode codec data: %s (code=%d)", de265_get_error_text(err), err),
+                            (NULL));
+                        return FALSE;
+                    }
+                }
+            } while (more);
+        }
+    }
+
     return TRUE;
 }
-#endif
 
 static GstFlowReturn gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse,
     VIDEO_FRAME * frame)

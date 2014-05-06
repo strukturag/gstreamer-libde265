@@ -35,6 +35,7 @@
     #define VIDEO_DECODER_TYPE      GST_TYPE_VIDEO_DECODER
     #define VIDEO_DECODER_GET_CLASS GST_VIDEO_DECODER_CLASS
     #define VIDEO_FRAME             GstVideoCodecFrame
+    #define VIDEO_STATE             GstVideoCodecState
     #define NEED_DATA_RESULT        GST_VIDEO_DECODER_FLOW_NEED_DATA
     #define HAVE_FRAME              gst_video_decoder_have_frame
     #define FINISH_FRAME            gst_video_decoder_finish_frame
@@ -47,6 +48,7 @@
     #define VIDEO_DECODER_TYPE      GST_TYPE_BASE_VIDEO_DECODER
     #define VIDEO_DECODER_GET_CLASS GST_BASE_VIDEO_DECODER_CLASS
     #define VIDEO_FRAME             GstVideoFrame
+    #define VIDEO_STATE             GstVideoState
     #define NEED_DATA_RESULT        GST_BASE_VIDEO_DECODER_FLOW_NEED_DATA
     #define HAVE_FRAME              gst_base_video_decoder_have_frame
     #define FINISH_FRAME            gst_base_video_decoder_finish_frame
@@ -78,9 +80,12 @@ typedef struct _GstLibde265Dec {
     int                     width;
     int                     height;
     GstLibde265DecMode      mode;
+    int                     length_size;
     int                     fps_n;
     int                     fps_d;
     int                     buffer_full;
+    void                    *codec_data;
+    int                     codec_data_size;
 #if GST_CHECK_VERSION(1,0,0)
     GstVideoCodecState      *input_state;
 #endif
