@@ -4,6 +4,8 @@ libgstlibde265_la_SOURCES = \
 	gstlibde265.c \
 	libde265-dec.c \
 	libde265-dec.h \
+	matroska/codec-utils.h \
+	matroska/codec-utils.c \
 	matroska/$(USE_GSTREAMER_VERSION)/ebml-ids.h \
 	matroska/$(USE_GSTREAMER_VERSION)/ebml-read.c \
 	matroska/$(USE_GSTREAMER_VERSION)/ebml-read.h \
@@ -40,6 +42,7 @@ libgstlibde265_la_LIBTOOLFLAGS = \
 
 noinst_HEADERS = \
 	libde265-dec.h \
+	matroska/codec-utils.h \
 	matroska/$(USE_GSTREAMER_VERSION)/ebml-ids.h \
 	matroska/$(USE_GSTREAMER_VERSION)/ebml-read.h \
 	matroska/$(USE_GSTREAMER_VERSION)/lzo.h \

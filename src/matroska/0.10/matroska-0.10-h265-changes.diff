@@ -1,6 +1,6 @@
-diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-good/gst/matroska/lzo.c src/matroska/0.10/lzo.c
---- gst-plugins-good/gst/matroska/lzo.c	2014-01-14 11:00:36.000000000 +0100
-+++ src/matroska/0.10/lzo.c	2014-01-14 02:11:19.000000000 +0100
+diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/matroska/lzo.c src/matroska/0.10/lzo.c
+--- gst-plugins-good/gst/matroska/lzo.c	2014-05-06 16:12:23.000000000 +0200
++++ src/matroska/0.10/lzo.c	2014-01-17 09:51:05.000000000 +0100
 @@ -22,7 +22,7 @@
  #include <gst/gst.h>
  #include <stdlib.h>
@@ -10,10 +10,18 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  #include "lzo.h"
  
  /*! define if we may write up to 12 bytes beyond the output buffer */
-diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-good/gst/matroska/matroska-demux.c src/matroska/0.10/matroska-demux.c
---- gst-plugins-good/gst/matroska/matroska-demux.c	2014-01-14 11:00:36.000000000 +0100
-+++ src/matroska/0.10/matroska-demux.c	2014-01-14 10:55:27.000000000 +0100
-@@ -122,7 +122,7 @@
+diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/matroska/matroska-demux.c src/matroska/0.10/matroska-demux.c
+--- gst-plugins-good/gst/matroska/matroska-demux.c	2014-05-06 16:13:07.000000000 +0200
++++ src/matroska/0.10/matroska-demux.c	2014-05-06 14:08:17.000000000 +0200
+@@ -69,6 +69,7 @@
+ 
+ #include "matroska-demux.h"
+ #include "matroska-ids.h"
++#include "../codec-utils.h"
+ 
+ GST_DEBUG_CATEGORY_STATIC (matroskademux_debug);
+ #define GST_CAT_DEFAULT matroskademux_debug
+@@ -122,7 +123,7 @@
          "subpicture/x-pgs; subtitle/x-kate; " "application/x-subtitle-unknown")
      );
  
@@ -22,7 +30,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      guint32 id, guint64 length, guint needed);
  
  /* element functions */
-@@ -138,7 +138,7 @@
+@@ -138,7 +139,7 @@
      gboolean active);
  static gboolean gst_matroska_demux_sink_activate (GstPad * sinkpad);
  
@@ -31,7 +39,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GstPad * pad, GstEvent * event);
  static gboolean gst_matroska_demux_handle_src_event (GstPad * pad,
      GstEvent * event);
-@@ -172,7 +172,7 @@
+@@ -172,7 +173,7 @@
  
  /* stream methods */
  static void gst_matroska_demux_reset (GstElement * element);
@@ -40,7 +48,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      gdouble rate, guint64 offset);
  
  /* gobject functions */
-@@ -182,7 +182,7 @@
+@@ -182,7 +183,7 @@
      guint prop_id, GValue * value, GParamSpec * pspec);
  
  GType gst_matroska_demux_get_type (void);
@@ -49,7 +57,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GST_TYPE_ELEMENT);
  
  static void
-@@ -205,7 +205,7 @@
+@@ -205,7 +206,7 @@
  static void
  gst_matroska_demux_finalize (GObject * object)
  {
@@ -58,7 +66,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  
    if (demux->common.src) {
      g_ptr_array_free (demux->common.src, TRUE);
-@@ -223,7 +223,7 @@
+@@ -223,7 +224,7 @@
  }
  
  static void
@@ -67,7 +75,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    GObjectClass *gobject_class = (GObjectClass *) klass;
    GstElementClass *gstelement_class = (GstElementClass *) klass;
-@@ -256,8 +256,8 @@
+@@ -256,8 +257,8 @@
  }
  
  static void
@@ -78,7 +86,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    demux->common.sinkpad = gst_pad_new_from_static_template (&sink_templ,
        "sink");
-@@ -324,7 +324,7 @@
+@@ -324,7 +325,7 @@
   * Returns the aggregated GstFlowReturn.
   */
  static GstFlowReturn
@@ -87,7 +95,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GstMatroskaTrackContext * track, GstFlowReturn ret)
  {
    guint i;
-@@ -367,7 +367,7 @@
+@@ -367,7 +368,7 @@
  static void
  gst_matroska_demux_reset (GstElement * element)
  {
@@ -96,7 +104,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
    guint i;
  
    GST_DEBUG_OBJECT (demux, "Resetting state");
-@@ -522,7 +522,7 @@
+@@ -522,7 +523,7 @@
  }
  
  static GstFlowReturn
@@ -105,7 +113,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    GstElementClass *klass = GST_ELEMENT_GET_CLASS (demux);
    GstMatroskaTrackContext *context;
-@@ -1359,7 +1359,7 @@
+@@ -1359,7 +1360,7 @@
  }
  
  static gboolean
@@ -114,7 +122,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GstQuery * query)
  {
    gboolean res = FALSE;
-@@ -1469,7 +1469,7 @@
+@@ -1469,7 +1470,7 @@
  gst_matroska_demux_handle_src_query (GstPad * pad, GstQuery * query)
  {
    gboolean ret;
@@ -123,7 +131,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  
    ret = gst_matroska_demux_query (demux, pad, query);
  
-@@ -1482,7 +1482,7 @@
+@@ -1482,7 +1483,7 @@
   * otherwise TRUE (whatever the outcome of event sending),
   * takes ownership of the passed event! */
  static gboolean
@@ -132,7 +140,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    gboolean is_newsegment;
    gboolean ret = FALSE;
-@@ -1531,7 +1531,7 @@
+@@ -1531,7 +1532,7 @@
  static gboolean
  gst_matroska_demux_element_send_event (GstElement * element, GstEvent * event)
  {
@@ -141,7 +149,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
    gboolean res;
  
    g_return_val_if_fail (event != NULL, FALSE);
-@@ -1548,7 +1548,7 @@
+@@ -1548,7 +1549,7 @@
  }
  
  static gboolean
@@ -150,7 +158,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GstMatroskaIndex * entry, gboolean reset, gboolean update)
  {
    gint i;
-@@ -1606,7 +1606,7 @@
+@@ -1606,7 +1607,7 @@
  /* searches for a cluster start from @pos,
   * return GST_FLOW_OK and cluster position in @pos if found */
  static GstFlowReturn
@@ -159,7 +167,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    gint64 newpos = *pos;
    gint64 orig_offset;
-@@ -1724,7 +1724,7 @@
+@@ -1724,7 +1725,7 @@
  /* bisect and scan through file for cluster starting before @time,
   * returns fake index entry with corresponding info on cluster */
  static GstMatroskaIndex *
@@ -168,7 +176,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    GstMatroskaIndex *entry = NULL;
    GstMatroskaReadState current_state;
-@@ -1907,7 +1907,7 @@
+@@ -1907,7 +1908,7 @@
  }
  
  static gboolean
@@ -177,7 +185,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GstPad * pad, GstEvent * event)
  {
    GstMatroskaIndex *entry = NULL;
-@@ -1976,8 +1976,16 @@
+@@ -1976,8 +1977,16 @@
  
    flush = ! !(flags & GST_SEEK_FLAG_FLUSH);
    keyunit = ! !(flags & GST_SEEK_FLAG_KEY_UNIT);
@@ -194,7 +202,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  
    /* always do full update if flushing, otherwise problems might arise
     * downstream with missing keyframes etc. */
-@@ -2180,7 +2188,7 @@
+@@ -2180,7 +2189,7 @@
   * function handle seeks to build the seek indexes first.
   */
  static gboolean
@@ -203,7 +211,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GstEvent * event)
  {
    GstSeekFlags flags;
-@@ -2262,7 +2270,7 @@
+@@ -2262,7 +2271,7 @@
  static gboolean
  gst_matroska_demux_handle_src_event (GstPad * pad, GstEvent * event)
  {
@@ -212,7 +220,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
    gboolean res = TRUE;
  
    switch (GST_EVENT_TYPE (event)) {
-@@ -2318,7 +2326,7 @@
+@@ -2318,7 +2327,7 @@
  }
  
  static GstFlowReturn
@@ -221,7 +229,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    GstFlowReturn ret = GST_FLOW_UNEXPECTED;
    gboolean done = TRUE;
-@@ -2371,7 +2379,7 @@
+@@ -2371,7 +2380,7 @@
  }
  
  static GstFlowReturn
@@ -230,7 +238,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    GstFlowReturn ret = GST_FLOW_OK;
    guint32 id;
-@@ -2473,7 +2481,7 @@
+@@ -2473,7 +2482,7 @@
   */
  
  static void
@@ -239,7 +247,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    gint stream_nr;
  
-@@ -2530,7 +2538,7 @@
+@@ -2530,7 +2539,7 @@
  }
  
  static GstFlowReturn
@@ -248,7 +256,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GstMatroskaTrackContext * stream, guint8 * data, guint len)
  {
    GstFlowReturn ret, cret;
-@@ -2554,7 +2562,7 @@
+@@ -2554,7 +2563,7 @@
  }
  
  static GstFlowReturn
@@ -257,7 +265,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GstMatroskaTrackContext * stream)
  {
    GstFlowReturn ret;
-@@ -2599,7 +2607,7 @@
+@@ -2599,7 +2608,7 @@
  }
  
  static GstFlowReturn
@@ -266,7 +274,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GstMatroskaTrackContext * stream)
  {
    GstFlowReturn ret;
-@@ -2632,7 +2640,7 @@
+@@ -2632,7 +2641,7 @@
  }
  
  static GstFlowReturn
@@ -275,7 +283,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GstMatroskaTrackContext * stream)
  {
    GstFlowReturn ret;
-@@ -2689,7 +2697,7 @@
+@@ -2689,7 +2698,7 @@
  }
  
  static void
@@ -284,7 +292,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GstMatroskaTrackContext * stream)
  {
    gchar *buf, *start;
-@@ -3100,7 +3108,7 @@
+@@ -3100,7 +3109,7 @@
  }
  
  static GstFlowReturn
@@ -293,7 +301,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GstEbmlRead * ebml, guint64 cluster_time, guint64 cluster_offset,
      gboolean is_simpleblock)
  {
-@@ -3736,7 +3744,7 @@
+@@ -3736,7 +3745,7 @@
  
  /* return FALSE if block(group) should be skipped (due to a seek) */
  static inline gboolean
@@ -302,7 +310,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    if (G_UNLIKELY (demux->seek_block)) {
      if (!(--demux->seek_block)) {
-@@ -3751,7 +3759,7 @@
+@@ -3751,7 +3760,7 @@
  }
  
  static GstFlowReturn
@@ -311,7 +319,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GstEbmlRead * ebml)
  {
    GstFlowReturn ret;
-@@ -3905,7 +3913,7 @@
+@@ -3905,7 +3914,7 @@
  }
  
  static GstFlowReturn
@@ -320,7 +328,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    GstFlowReturn ret = GST_FLOW_OK;
    guint32 id;
-@@ -3954,7 +3962,7 @@
+@@ -3954,7 +3963,7 @@
  #define MAX_BLOCK_SIZE (15 * 1024 * 1024)
  
  static inline GstFlowReturn
@@ -329,7 +337,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    if (G_UNLIKELY (bytes > MAX_BLOCK_SIZE)) {
      /* only a few blocks are expected/allowed to be large,
-@@ -3978,7 +3986,7 @@
+@@ -3978,7 +3987,7 @@
  
  /* returns TRUE if we truely are in error state, and should give up */
  static inline gboolean
@@ -338,7 +346,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    if (!demux->streaming && demux->next_cluster_offset > 0) {
      /* just repositioning to where next cluster should be and try from there */
-@@ -4007,7 +4015,7 @@
+@@ -4007,7 +4016,7 @@
  }
  
  static inline GstFlowReturn
@@ -347,7 +355,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    GST_LOG_OBJECT (demux, "skipping %d bytes", flush);
    demux->common.offset += flush;
-@@ -4030,7 +4038,7 @@
+@@ -4030,7 +4039,7 @@
   * Returns UNEXPECTED if insufficient available,
   * ERROR if too much was attempted to read. */
  static inline GstFlowReturn
@@ -356,7 +364,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      GstEbmlRead * ebml)
  {
    GstBuffer *buffer = NULL;
-@@ -4068,7 +4076,7 @@
+@@ -4068,7 +4077,7 @@
  }
  
  static void
@@ -365,7 +373,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    GstQuery *query;
    gboolean seekable = FALSE;
-@@ -4106,7 +4114,7 @@
+@@ -4106,7 +4115,7 @@
  }
  
  static GstFlowReturn
@@ -374,7 +382,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    guint32 id;
    guint64 before_pos;
-@@ -4162,7 +4170,7 @@
+@@ -4162,7 +4171,7 @@
  } G_STMT_END
  
  static GstFlowReturn
@@ -383,7 +391,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      guint64 length, guint needed)
  {
    GstEbmlRead ebml = { 0, };
-@@ -4441,7 +4449,7 @@
+@@ -4441,7 +4450,7 @@
  static void
  gst_matroska_demux_loop (GstPad * pad)
  {
@@ -392,7 +400,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
    GstFlowReturn ret;
    guint32 id;
    guint64 length;
-@@ -4600,7 +4608,7 @@
+@@ -4600,7 +4609,7 @@
   * Create and push a flushing seek event upstream
   */
  static gboolean
@@ -401,7 +409,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  {
    GstEvent *event;
    gboolean res = 0;
-@@ -4621,7 +4629,7 @@
+@@ -4621,7 +4630,7 @@
  static GstFlowReturn
  gst_matroska_demux_chain (GstPad * pad, GstBuffer * buffer)
  {
@@ -410,7 +418,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
    guint available;
    GstFlowReturn ret = GST_FLOW_OK;
    guint needed = 0;
-@@ -4669,7 +4677,7 @@
+@@ -4669,7 +4678,7 @@
  gst_matroska_demux_handle_sink_event (GstPad * pad, GstEvent * event)
  {
    gboolean res = TRUE;
@@ -419,7 +427,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  
    GST_DEBUG_OBJECT (demux,
        "have event type %s: %p on sink pad", GST_EVENT_TYPE_NAME (event), event);
-@@ -4777,7 +4785,7 @@
+@@ -4777,7 +4786,7 @@
  static gboolean
  gst_matroska_demux_sink_activate (GstPad * sinkpad)
  {
@@ -428,7 +436,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  
    if (gst_pad_check_pull_range (sinkpad)) {
      GST_DEBUG ("going to pull mode");
-@@ -4795,7 +4803,7 @@
+@@ -4795,7 +4804,7 @@
  static gboolean
  gst_matroska_demux_sink_activate_pull (GstPad * sinkpad, gboolean active)
  {
@@ -437,17 +445,35 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  
    if (active) {
      /* if we have a scheduler we can start the task */
-@@ -5074,6 +5082,9 @@
+@@ -5074,6 +5083,27 @@
    } else if (!strcmp (codec_id, GST_MATROSKA_CODEC_ID_VIDEO_VP8)) {
      caps = gst_caps_new_simple ("video/x-vp8", NULL);
      *codec_name = g_strdup_printf ("On2 VP8");
 +  } else if (!strcmp (codec_id, GST_MATROSKA_CODEC_ID_VIDEO_MPEGH_HEVC)) {
 +    caps = gst_caps_new_simple ("video/x-h265", NULL);
++    if (data) {
++      GstBuffer *priv;
++
++      gst_codec_utils_h265_caps_set_level_tier_and_profile (caps, data + 1,
++          size - 1);
++
++      priv = gst_buffer_new_and_alloc (size);
++      memcpy (GST_BUFFER_DATA (priv), data, size);
++      gst_caps_set_simple (caps, "codec_data", GST_TYPE_BUFFER, priv, NULL);
++      gst_buffer_unref (priv);
++
++      gst_caps_set_simple (caps, "stream-format", G_TYPE_STRING, "hvc1",
++          "alignment", G_TYPE_STRING, "au", NULL);
++    } else {
++      GST_WARNING ("No codec data found, assuming output is byte-stream");
++      gst_caps_set_simple (caps, "stream-format", G_TYPE_STRING, "byte-stream",
++          NULL);
++    }
 +    *codec_name = g_strdup_printf ("HEVC");
    } else {
      GST_WARNING ("Unknown codec '%s', cannot build Caps", codec_id);
      return NULL;
-@@ -5575,7 +5586,7 @@
+@@ -5575,7 +5605,7 @@
  static void
  gst_matroska_demux_set_index (GstElement * element, GstIndex * index)
  {
@@ -456,7 +482,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  
    GST_OBJECT_LOCK (demux);
    if (demux->common.element_index)
-@@ -5590,7 +5601,7 @@
+@@ -5590,7 +5620,7 @@
  gst_matroska_demux_get_index (GstElement * element)
  {
    GstIndex *result = NULL;
@@ -465,7 +491,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  
    GST_OBJECT_LOCK (demux);
    if (demux->common.element_index)
-@@ -5606,7 +5617,7 @@
+@@ -5606,7 +5636,7 @@
  gst_matroska_demux_change_state (GstElement * element,
      GstStateChange transition)
  {
@@ -474,7 +500,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
    GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
  
    /* handle upwards state changes here */
-@@ -5633,7 +5644,7 @@
+@@ -5633,7 +5663,7 @@
  gst_matroska_demux_set_property (GObject * object,
      guint prop_id, const GValue * value, GParamSpec * pspec)
  {
@@ -483,7 +509,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  
    g_return_if_fail (GST_IS_MATROSKA_DEMUX (object));
    demux = GST_MATROSKA_DEMUX (object);
-@@ -5654,7 +5665,7 @@
+@@ -5654,7 +5684,7 @@
  gst_matroska_demux_get_property (GObject * object,
      guint prop_id, GValue * value, GParamSpec * pspec)
  {
@@ -492,7 +518,7 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  
    g_return_if_fail (GST_IS_MATROSKA_DEMUX (object));
    demux = GST_MATROSKA_DEMUX (object);
-@@ -5682,7 +5693,7 @@
+@@ -5682,7 +5712,7 @@
  
    /* create an elementfactory for the matroska_demux element */
    if (!gst_element_register (plugin, "matroskademux",
@@ -501,9 +527,9 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      return FALSE;
  
    return TRUE;
-diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-good/gst/matroska/matroska-demux.h src/matroska/0.10/matroska-demux.h
---- gst-plugins-good/gst/matroska/matroska-demux.h	2014-01-14 11:00:36.000000000 +0100
-+++ src/matroska/0.10/matroska-demux.h	2014-01-14 09:56:26.000000000 +0100
+diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/matroska/matroska-demux.h src/matroska/0.10/matroska-demux.h
+--- gst-plugins-good/gst/matroska/matroska-demux.h	2014-05-06 16:13:07.000000000 +0200
++++ src/matroska/0.10/matroska-demux.h	2014-01-17 09:51:05.000000000 +0100
 @@ -34,15 +34,15 @@
  #define GST_TYPE_MATROSKA_DEMUX \
    (gst_matroska_demux_get_type ())
@@ -538,9 +564,9 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  
  gboolean gst_matroska_demux_plugin_init (GstPlugin *plugin);
  
-diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-good/gst/matroska/matroska-ids.h src/matroska/0.10/matroska-ids.h
---- gst-plugins-good/gst/matroska/matroska-ids.h	2014-01-14 11:00:36.000000000 +0100
-+++ src/matroska/0.10/matroska-ids.h	2014-01-14 02:11:17.000000000 +0100
+diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/matroska/matroska-ids.h src/matroska/0.10/matroska-ids.h
+--- gst-plugins-good/gst/matroska/matroska-ids.h	2014-05-06 16:13:07.000000000 +0200
++++ src/matroska/0.10/matroska-ids.h	2014-01-17 09:51:05.000000000 +0100
 @@ -345,6 +345,7 @@
  #define GST_MATROSKA_CODEC_ID_VIDEO_SNOW         "V_SNOW"
  #define GST_MATROSKA_CODEC_ID_VIDEO_DIRAC        "V_DIRAC"
@@ -549,9 +575,9 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
  
  #define GST_MATROSKA_CODEC_ID_AUDIO_MPEG1_L1       "A_MPEG/L1"
  #define GST_MATROSKA_CODEC_ID_AUDIO_MPEG1_L2       "A_MPEG/L2"
-diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-good/gst/matroska/matroska-parse.c src/matroska/0.10/matroska-parse.c
---- gst-plugins-good/gst/matroska/matroska-parse.c	2014-01-14 11:00:36.000000000 +0100
-+++ src/matroska/0.10/matroska-parse.c	2014-01-14 09:58:26.000000000 +0100
+diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/matroska/matroska-parse.c src/matroska/0.10/matroska-parse.c
+--- gst-plugins-good/gst/matroska/matroska-parse.c	2014-05-06 16:13:07.000000000 +0200
++++ src/matroska/0.10/matroska-parse.c	2014-01-17 09:51:05.000000000 +0100
 @@ -96,7 +96,7 @@
      GST_STATIC_CAPS ("video/x-matroska; video/webm")
      );
@@ -892,9 +918,9 @@ diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-
      return FALSE;
  
    return TRUE;
-diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' gst-plugins-good/gst/matroska/matroska-parse.h src/matroska/0.10/matroska-parse.h
---- gst-plugins-good/gst/matroska/matroska-parse.h	2014-01-14 11:00:36.000000000 +0100
-+++ src/matroska/0.10/matroska-parse.h	2014-01-14 09:57:43.000000000 +0100
+diff -Nur '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/matroska/matroska-parse.h src/matroska/0.10/matroska-parse.h
+--- gst-plugins-good/gst/matroska/matroska-parse.h	2014-05-06 16:12:23.000000000 +0200
++++ src/matroska/0.10/matroska-parse.h	2014-01-17 09:51:05.000000000 +0100
 @@ -34,15 +34,15 @@
  #define GST_TYPE_MATROSKA_PARSE \
    (gst_matroska_parse_get_type ())
