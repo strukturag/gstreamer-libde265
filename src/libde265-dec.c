@@ -376,6 +376,11 @@ static GstFlowReturn _gst_libde265_image_available(VIDEO_DECODER_BASE * parse,
         if (dec->fps_n > 0) {
             state->info.fps_n = dec->fps_n;
             state->info.fps_d = dec->fps_d;
+        } else if (state->info.fps_n > 1000) {
+            // TODO(fancycode): is 24/1 a sane default or can we get it from the container somehow?
+            GST_WARNING ("Framerate is too high (%d/%d), defaulting to 24/1", state->info.fps_n, state->info.fps_d);
+            state->info.fps_n = 24;
+            state->info.fps_d = 1;
         }
         gst_video_decoder_negotiate(parse);
 #else
@@ -387,6 +392,11 @@ static GstFlowReturn _gst_libde265_image_available(VIDEO_DECODER_BASE * parse,
         if (dec->fps_n > 0) {
             state->fps_n = dec->fps_n;
             state->fps_d = dec->fps_d;
+        } else if (state->fps_n > 1000) {
+            // TODO(fancycode): is 24/1 a sane default or can we get it from the container somehow?
+            GST_WARNING ("Framerate is too high (%d/%d), defaulting to 24/1", state->fps_n, state->fps_d);
+            state->fps_n = 24;
+            state->fps_d = 1;
         }
         gst_base_video_decoder_set_src_caps (parse);
 #endif
