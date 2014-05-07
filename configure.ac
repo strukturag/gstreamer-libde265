@@ -45,6 +45,15 @@ AC_CHECK_PROG(HAVE_PKGCONFIG, pkg-config, [ ], [
   AC_MSG_ERROR([You need to have pkg-config installed!])
 ])
 
+dnl possibly modify pkg-config path
+AC_ARG_WITH(pkg-config-path,
+    AC_HELP_STRING([--with-pkg-config-path],
+                   [colon-separated list of pkg-config(1) dirs]),
+    [
+        export PKG_CONFIG_PATH=${withval}
+        AC_MSG_NOTICE(Set PKG_CONFIG_PATH to $PKG_CONFIG_PATH)
+    ])
+
 AC_ARG_ENABLE(gstreamer1.0,
               [AS_HELP_STRING([--enable-gstreamer1.0],
                               [build for GStreamer 1.0 (default=yes)])],
