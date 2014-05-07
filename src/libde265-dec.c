@@ -638,6 +638,12 @@ gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse, VIDEO_STATE * state)
             }
         }
       } while (more);
+    } else if ((value = gst_structure_get_value (str, "stream-format"))) {
+      const gchar *str = g_value_get_string (value);
+      if (strcmp (str, "byte-stream") == 0) {
+        dec->mode = GST_TYPE_LIBDE265_DEC_RAW;
+        GST_DEBUG ("Assuming raw byte-stream");
+      }
     }
   }
 
