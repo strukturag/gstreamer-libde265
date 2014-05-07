@@ -110,8 +110,8 @@ static gboolean gst_matroska_parse_element_query (GstElement * element,
     GstQuery * query);
 
 /* pad functions */
-static gboolean gst_matroska_parse_handle_seek_event (GstMatroskaParseH265 * parse,
-    GstPad * pad, GstEvent * event);
+static gboolean gst_matroska_parse_handle_seek_event (GstMatroskaParseH265 *
+    parse, GstPad * pad, GstEvent * event);
 static gboolean gst_matroska_parse_handle_src_event (GstPad * pad,
     GstObject * parent, GstEvent * event);
 static gboolean gst_matroska_parse_handle_src_query (GstPad * pad,
@@ -1520,7 +1520,8 @@ gst_matroska_parse_handle_src_event (GstPad * pad, GstObject * parent,
 }
 
 static GstFlowReturn
-gst_matroska_parse_parse_tracks (GstMatroskaParseH265 * parse, GstEbmlRead * ebml)
+gst_matroska_parse_parse_tracks (GstMatroskaParseH265 * parse,
+    GstEbmlRead * ebml)
 {
   GstFlowReturn ret = GST_FLOW_OK;
   guint32 id;
@@ -1617,8 +1618,8 @@ gst_matroska_ebmlnum_sint (guint8 * data, guint size, gint64 * num)
 }
 
 static GstFlowReturn
-gst_matroska_parse_parse_blockgroup_or_simpleblock (GstMatroskaParseH265 * parse,
-    GstEbmlRead * ebml, guint64 cluster_time, guint64 cluster_offset,
+gst_matroska_parse_parse_blockgroup_or_simpleblock (GstMatroskaParseH265 *
+    parse, GstEbmlRead * ebml, guint64 cluster_time, guint64 cluster_offset,
     gboolean is_simpleblock)
 {
   GstMatroskaTrackContext *stream = NULL;
@@ -2286,7 +2287,8 @@ gst_matroska_parse_parse_contents_seekentry (GstMatroskaParseH265 * parse,
 }
 
 static GstFlowReturn
-gst_matroska_parse_parse_contents (GstMatroskaParseH265 * parse, GstEbmlRead * ebml)
+gst_matroska_parse_parse_contents (GstMatroskaParseH265 * parse,
+    GstEbmlRead * ebml)
 {
   GstFlowReturn ret = GST_FLOW_OK;
   guint32 id;

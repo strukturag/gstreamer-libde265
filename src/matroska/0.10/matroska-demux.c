@@ -139,8 +139,8 @@ static gboolean gst_matroska_demux_sink_activate_pull (GstPad * sinkpad,
     gboolean active);
 static gboolean gst_matroska_demux_sink_activate (GstPad * sinkpad);
 
-static gboolean gst_matroska_demux_handle_seek_event (GstMatroskaDemuxH265 * demux,
-    GstPad * pad, GstEvent * event);
+static gboolean gst_matroska_demux_handle_seek_event (GstMatroskaDemuxH265 *
+    demux, GstPad * pad, GstEvent * event);
 static gboolean gst_matroska_demux_handle_src_event (GstPad * pad,
     GstEvent * event);
 static const GstQueryType *gst_matroska_demux_get_src_query_types (GstPad *
@@ -2380,7 +2380,8 @@ exit:
 }
 
 static GstFlowReturn
-gst_matroska_demux_parse_tracks (GstMatroskaDemuxH265 * demux, GstEbmlRead * ebml)
+gst_matroska_demux_parse_tracks (GstMatroskaDemuxH265 * demux,
+    GstEbmlRead * ebml)
 {
   GstFlowReturn ret = GST_FLOW_OK;
   guint32 id;
@@ -3109,8 +3110,8 @@ gst_matroska_demux_check_aac (GstElement * element,
 }
 
 static GstFlowReturn
-gst_matroska_demux_parse_blockgroup_or_simpleblock (GstMatroskaDemuxH265 * demux,
-    GstEbmlRead * ebml, guint64 cluster_time, guint64 cluster_offset,
+gst_matroska_demux_parse_blockgroup_or_simpleblock (GstMatroskaDemuxH265 *
+    demux, GstEbmlRead * ebml, guint64 cluster_time, guint64 cluster_offset,
     gboolean is_simpleblock)
 {
   GstMatroskaTrackContext *stream = NULL;
@@ -3914,7 +3915,8 @@ gst_matroska_demux_parse_contents_seekentry (GstMatroskaDemuxH265 * demux,
 }
 
 static GstFlowReturn
-gst_matroska_demux_parse_contents (GstMatroskaDemuxH265 * demux, GstEbmlRead * ebml)
+gst_matroska_demux_parse_contents (GstMatroskaDemuxH265 * demux,
+    GstEbmlRead * ebml)
 {
   GstFlowReturn ret = GST_FLOW_OK;
   guint32 id;
@@ -4609,7 +4611,8 @@ pause:
  * Create and push a flushing seek event upstream
  */
 static gboolean
-perform_seek_to_offset (GstMatroskaDemuxH265 * demux, gdouble rate, guint64 offset)
+perform_seek_to_offset (GstMatroskaDemuxH265 * demux, gdouble rate,
+    guint64 offset)
 {
   GstEvent *event;
   gboolean res = 0;

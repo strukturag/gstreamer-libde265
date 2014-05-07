@@ -90,8 +90,7 @@ gst_webm_mux_class_init (GstWebMMuxClass * klass)
       &webm_videosink_templ);
   gst_element_class_add_static_pad_template (gstelement_class,
       &webm_audiosink_templ);
-  gst_element_class_add_static_pad_template (gstelement_class,
-      &webm_src_templ);
+  gst_element_class_add_static_pad_template (gstelement_class, &webm_src_templ);
   gst_element_class_set_details_simple (gstelement_class, "WebM muxer",
       "Codec/Muxer",
       "Muxes video and audio streams into a WebM stream",
