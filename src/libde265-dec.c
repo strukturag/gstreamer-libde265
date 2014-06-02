@@ -522,7 +522,7 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
   de265_error ret = DE265_OK;
   int more = 0;
   de265_PTS pts = (de265_PTS) FRAME_PTS (frame);
-  int size;
+  gsize size;
 
 #if GST_CHECK_VERSION(1,0,0)
   GstMapInfo info;
