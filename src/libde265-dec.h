@@ -40,6 +40,7 @@
     #define HAVE_FRAME              gst_video_decoder_have_frame
     #define FINISH_FRAME            gst_video_decoder_finish_frame
     #define ALLOC_OUTPUT_FRAME      gst_video_decoder_allocate_output_frame
+    #define FRAME_PTS(frame)        ((frame)->pts)
 #else
     #include <gst/video/gstbasevideodecoder.h>
 
@@ -53,6 +54,7 @@
     #define HAVE_FRAME              gst_base_video_decoder_have_frame
     #define FINISH_FRAME            gst_base_video_decoder_finish_frame
     #define ALLOC_OUTPUT_FRAME      gst_base_video_decoder_alloc_src_frame
+    #define FRAME_PTS(frame)        ((frame)->presentation_timestamp)
 #endif
 
 #include <libde265/de265.h>
