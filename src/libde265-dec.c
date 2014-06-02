@@ -552,7 +552,7 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
         if (start_data + dec->length_size + nal_size > end_data) {
           GST_ELEMENT_ERROR (parse, STREAM, DECODE,
               ("Overflow in input data, check data mode"), (NULL));
-          return GST_FLOW_ERROR;
+          goto error_input;
         }
         ret =
             de265_push_NAL (dec->ctx, start_data + dec->length_size, nal_size,
@@ -561,7 +561,7 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
           GST_ELEMENT_ERROR (parse, STREAM, DECODE,
               ("Error while pushing data: %s (code=%d)",
                   de265_get_error_text (ret), ret), (NULL));
-          return GST_FLOW_ERROR;
+          goto error_input;
         }
         start_data += dec->length_size + nal_size;
       }
@@ -571,7 +571,7 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
         GST_ELEMENT_ERROR (parse, STREAM, DECODE,
             ("Error while pushing data: %s (code=%d)",
                 de265_get_error_text (ret), ret), (NULL));
-        return GST_FLOW_ERROR;
+        goto error_input;
       }
     }
   } else {
@@ -583,14 +583,14 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
       return GST_FLOW_ERROR;
     }
   }
+#if GST_CHECK_VERSION(1,0,0)
+  gst_buffer_unmap (frame->input_buffer, &info);
+#endif
 
   // decode as much as possible
   do {
     ret = de265_decode (dec->ctx, &more);
   } while (more && ret == DE265_OK);
-#if GST_CHECK_VERSION(1,0,0)
-  gst_buffer_unmap (frame->input_buffer, &info);
-#endif
 
   switch (ret) {
     case DE265_OK:
@@ -668,6 +668,12 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
 #endif
   FRAME_PTS (frame) = (GstClockTime) de265_get_image_PTS (img);
   return FINISH_FRAME (parse, frame);
+
+error_input:
+#if GST_CHECK_VERSION(1,0,0)
+  gst_buffer_unmap (frame->input_buffer, &info);
+#endif
+  return GST_FLOW_ERROR;
 }
 
 gboolean
