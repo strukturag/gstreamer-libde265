@@ -37,6 +37,7 @@
     #define VIDEO_FRAME             GstVideoCodecFrame
     #define VIDEO_STATE             GstVideoCodecState
     #define NEED_DATA_RESULT        GST_VIDEO_DECODER_FLOW_NEED_DATA
+    #define GET_FRAME               gst_video_decoder_get_frame
     #define HAVE_FRAME              gst_video_decoder_have_frame
     #define FINISH_FRAME            gst_video_decoder_finish_frame
     #define ALLOC_OUTPUT_FRAME      gst_video_decoder_allocate_output_frame
@@ -51,6 +52,7 @@
     #define VIDEO_FRAME             GstVideoFrame
     #define VIDEO_STATE             GstVideoState
     #define NEED_DATA_RESULT        GST_BASE_VIDEO_DECODER_FLOW_NEED_DATA
+    #define GET_FRAME               gst_base_video_decoder_get_frame
     #define HAVE_FRAME              gst_base_video_decoder_have_frame
     #define FINISH_FRAME            gst_base_video_decoder_finish_frame
     #define ALLOC_OUTPUT_FRAME      gst_base_video_decoder_alloc_src_frame
@@ -89,7 +91,9 @@ typedef struct _GstLibde265Dec {
     void                    *codec_data;
     int                     codec_data_size;
 #if GST_CHECK_VERSION(1,0,0)
+    int                     frame_number;
     GstVideoCodecState      *input_state;
+    GstVideoCodecState      *output_state;
 #endif
 } GstLibde265Dec;
 

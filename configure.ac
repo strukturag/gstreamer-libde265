@@ -196,7 +196,7 @@ AC_SEARCH_LIBS([BZ2_bzDecompressInit], [bz2], [
 ])
 LIBS="$save_LIBS"
 
-PKG_CHECK_MODULES(libde265, [libde265 >= 0.6], [
+PKG_CHECK_MODULES(libde265, [libde265 >= 0.7], [
   AC_SUBST(libde265_CFLAGS)
   AC_SUBST(libde265_LIBS)
 ], [
