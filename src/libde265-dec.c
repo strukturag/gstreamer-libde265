@@ -690,9 +690,10 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
 #endif
   end_data = frame_data + size;
 
+#if GST_CHECK_VERSION(1,0,0)
   GST_VIDEO_CODEC_FRAME_FLAG_SET (frame,
       GST_VIDEO_CODEC_FRAME_FLAG_DECODE_ONLY);
-
+#endif
   if (size > 0) {
     if (dec->mode == GST_TYPE_LIBDE265_DEC_PACKETIZED) {
       // stream contains length fields and NALs
@@ -790,10 +791,10 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
     FRAME_PTS (out_frame) = (GstClockTime) de265_get_image_PTS (img);
     return FINISH_FRAME (parse, out_frame);
   }
-#endif
 
   GST_VIDEO_CODEC_FRAME_FLAG_UNSET (frame,
       GST_VIDEO_CODEC_FRAME_FLAG_DECODE_ONLY);
+#endif
 
   GstFlowReturn result =
       _gst_libde265_image_available (parse, de265_get_image_width (img, 0),
