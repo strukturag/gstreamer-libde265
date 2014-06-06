@@ -849,7 +849,6 @@ error_input:
 #if GST_CHECK_VERSION(1,0,0)
   gst_buffer_unmap (frame->input_buffer, &info);
 #endif
-  gst_video_codec_frame_unref (frame);
   return GST_FLOW_ERROR;
 }
 
