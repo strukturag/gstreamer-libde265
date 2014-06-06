@@ -74,14 +74,15 @@ the average framerate.
 
 | Resolution        | avg. fps | CPU usage |
 | ----------------- | -------- | --------- |
-| [720p][1]         |  284 fps |      39 % |
-| [1080p][2]        |  150 fps |      45 % |
-| [4K][3]           |   36 fps |      56 % |
+| [720p][1]         |  298 fps |      36 % |
+| [1080p][2]        |  161 fps |      43 % |
+| [4K][3]           |   40 fps |      55 % |
 
 Environment:
 - Intel(R) Core(TM) i7-2700K CPU @ 3.50GHz (4 physical CPU cores)
 - Ubuntu 12.04, 64bit
 - GStreamer 0.10.36
+- libde265 0.7
 
 [1]: http://trailers.divx.com/hevc/TearsOfSteel_720p_24fps_27qp_831kbps_720p_GPSNR_41.65_HM11_2aud_7subs.mkv
 [2]: http://trailers.divx.com/hevc/TearsOfSteel_1080p_24fps_27qp_1474kbps_GPSNR_42.29_HM11_2aud_7subs.mkv
