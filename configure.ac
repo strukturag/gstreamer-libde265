@@ -1,7 +1,6 @@
 dnl required version of autoconf
 AC_PREREQ([2.53])
 
-dnl TODO: fill in your package name and package version here
 AC_INIT([gstreamer-libde265],[0.1.9])
 
 dnl required versions of gstreamer
