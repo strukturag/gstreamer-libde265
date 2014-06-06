@@ -25,7 +25,7 @@ Compile for gstreamer1.0:
 ## Dependencies
 
 Various libraries are required to build gstreamer-libde265:
-- `libde265-dev` (>= 0.6),
+- `libde265-dev` (>= 0.7),
 - `libz-dev`
 - `libbz2-dev`
 - `libgstreamer0.10-dev` (only for gstreamer0.10)
