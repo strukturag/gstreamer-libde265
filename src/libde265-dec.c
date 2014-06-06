@@ -26,8 +26,8 @@
 
 #include "libde265-dec.h"
 
-#if !defined(LIBDE265_NUMERIC_VERSION) || LIBDE265_NUMERIC_VERSION < 0x00060000
-#error "You need libde265 0.6 or newer to compile this plugin."
+#if !defined(LIBDE265_NUMERIC_VERSION) || LIBDE265_NUMERIC_VERSION < 0x00070000
+#error "You need libde265 0.7 or newer to compile this plugin."
 #endif
 
 // use two decoder threads if no information about
@@ -477,9 +477,7 @@ gst_libde265_dec_reset (VIDEO_DECODER_BASE * parse)
               de265_get_error_text (err), err), (NULL));
       return FALSE;
     }
-#if LIBDE265_NUMERIC_VERSION >= 0x00070000
     de265_push_end_of_NAL (dec->ctx);
-#endif
     do {
       err = de265_decode (dec->ctx, &more);
       switch (err) {
@@ -631,9 +629,7 @@ gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse, VIDEO_STATE * state)
 #if GST_CHECK_VERSION(1,0,0)
       gst_buffer_unmap (buf, &info);
 #endif
-#if LIBDE265_NUMERIC_VERSION >= 0x00070000
       de265_push_end_of_NAL (dec->ctx);
-#endif
       do {
         err = de265_decode (dec->ctx, &more);
         switch (err) {
