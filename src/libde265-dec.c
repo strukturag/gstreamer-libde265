@@ -606,9 +606,54 @@ gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse, VIDEO_STATE * state)
       dec->codec_data_size = size;
       memcpy (dec->codec_data, data, size);
       if (size > 3 && (data[0] || data[1] || data[2] > 1)) {
+        // encoded in "hvcC" format (assume version 0)
         dec->mode = GST_TYPE_LIBDE265_DEC_PACKETIZED;
-        if (size > 21) {
+        if (size > 22) {
+          int i;
+          if (data[0] != 0) {
+            GST_ELEMENT_WARNING (parse, STREAM,
+                DECODE, ("Unsupported extra data version %d, decoding may fail",
+                    data[0]), (NULL));
+          }
           dec->length_size = (data[21] & 3) + 1;
+          int num_param_sets = data[22];
+          int pos = 23;
+          for (i = 0; i < num_param_sets; i++) {
+            int j;
+            if (pos + 3 > size) {
+              GST_ELEMENT_ERROR (parse, STREAM, DECODE,
+                  ("Buffer underrun in extra header (%d >= %d)", pos + 3,
+                      size), (NULL));
+              return FALSE;
+            }
+            // ignore flags + NAL type (1 byte)
+            int nal_count = data[pos + 1] << 8 | data[pos + 2];
+            pos += 3;
+            for (j = 0; j < nal_count; j++) {
+              if (pos + 2 > size) {
+                GST_ELEMENT_ERROR (parse, STREAM, DECODE,
+                    ("Buffer underrun in extra nal header (%d >= %d)", pos + 2,
+                        size), (NULL));
+                return FALSE;
+              }
+              int nal_size = data[pos] << 8 | data[pos + 1];
+              if (pos + 2 + nal_size > size) {
+                GST_ELEMENT_ERROR (parse, STREAM, DECODE,
+                    ("Buffer underrun in extra nal (%d >= %d)",
+                        pos + 2 + nal_size, size), (NULL));
+                return FALSE;
+              }
+              err =
+                  de265_push_NAL (dec->ctx, data + pos + 2, nal_size, 0, NULL);
+              if (!de265_isOK (err)) {
+                GST_ELEMENT_ERROR (parse, STREAM, DECODE,
+                    ("Failed to push data: %s (%d)", de265_get_error_text (err),
+                        err), (NULL));
+                return NULL;
+              }
+              pos += 2 + nal_size;
+            }
+          }
         }
         GST_DEBUG ("Assuming packetized data (%d bytes length)",
             dec->length_size);
