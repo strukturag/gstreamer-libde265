@@ -3235,6 +3235,9 @@ gst_matroska_parse_plugin_init (GstPlugin * plugin)
   if (!gst_element_register (plugin, "matroskaparse",
           GST_RANK_NONE + 1, GST_TYPE_MATROSKA_PARSE))
     return FALSE;
+  if (!gst_element_register (plugin, "matroskaparse-libde265",
+          GST_RANK_NONE + 1, GST_TYPE_MATROSKA_PARSE))
+    return FALSE;
 
   return TRUE;
 }

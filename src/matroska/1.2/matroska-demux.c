@@ -5857,6 +5857,9 @@ gst_matroska_demux_plugin_init (GstPlugin * plugin)
   if (!gst_element_register (plugin, "matroskademux",
           GST_RANK_PRIMARY + 1, GST_TYPE_MATROSKA_DEMUX))
     return FALSE;
+  if (!gst_element_register (plugin, "matroskademux-libde265",
+          GST_RANK_PRIMARY + 1, GST_TYPE_MATROSKA_DEMUX))
+    return FALSE;
 
   return TRUE;
 }

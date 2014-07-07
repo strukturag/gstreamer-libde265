@@ -1,5 +1,5 @@
 diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/matroska/lzo.c src/matroska/0.10/lzo.c
---- gst-plugins-good/gst/matroska/lzo.c	2014-05-06 16:12:23.000000000 +0200
+--- gst-plugins-good/gst/matroska/lzo.c	2014-06-23 18:08:32.000000000 +0200
 +++ src/matroska/0.10/lzo.c	2014-05-07 09:34:26.000000000 +0200
 @@ -22,7 +22,7 @@
  #include <gst/gst.h>
@@ -11,8 +11,8 @@ diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.dif
  
  /*! define if we may write up to 12 bytes beyond the output buffer */
 diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/matroska/matroska-demux.c src/matroska/0.10/matroska-demux.c
---- gst-plugins-good/gst/matroska/matroska-demux.c	2014-05-06 16:13:07.000000000 +0200
-+++ src/matroska/0.10/matroska-demux.c	2014-05-07 09:34:26.000000000 +0200
+--- gst-plugins-good/gst/matroska/matroska-demux.c	2014-06-23 18:21:36.000000000 +0200
++++ src/matroska/0.10/matroska-demux.c	2014-07-07 17:03:53.000000000 +0200
 @@ -69,6 +69,7 @@
  
  #include "matroska-demux.h"
@@ -525,17 +525,20 @@ diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.dif
  
    g_return_if_fail (GST_IS_MATROSKA_DEMUX (object));
    demux = GST_MATROSKA_DEMUX (object);
-@@ -5682,7 +5715,7 @@
+@@ -5682,7 +5715,10 @@
  
    /* create an elementfactory for the matroska_demux element */
    if (!gst_element_register (plugin, "matroskademux",
 -          GST_RANK_PRIMARY, GST_TYPE_MATROSKA_DEMUX))
 +          GST_RANK_PRIMARY + 1, GST_TYPE_MATROSKA_DEMUX))
++    return FALSE;
++  if (!gst_element_register (plugin, "matroskademux-libde265",
++          GST_RANK_PRIMARY + 1, GST_TYPE_MATROSKA_DEMUX))
      return FALSE;
  
    return TRUE;
 diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/matroska/matroska-demux.h src/matroska/0.10/matroska-demux.h
---- gst-plugins-good/gst/matroska/matroska-demux.h	2014-05-06 16:13:07.000000000 +0200
+--- gst-plugins-good/gst/matroska/matroska-demux.h	2014-06-23 18:21:36.000000000 +0200
 +++ src/matroska/0.10/matroska-demux.h	2014-01-17 09:51:05.000000000 +0100
 @@ -34,15 +34,15 @@
  #define GST_TYPE_MATROSKA_DEMUX \
@@ -572,7 +575,7 @@ diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.dif
  gboolean gst_matroska_demux_plugin_init (GstPlugin *plugin);
  
 diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/matroska/matroska-ids.h src/matroska/0.10/matroska-ids.h
---- gst-plugins-good/gst/matroska/matroska-ids.h	2014-05-06 16:13:07.000000000 +0200
+--- gst-plugins-good/gst/matroska/matroska-ids.h	2014-06-23 18:21:36.000000000 +0200
 +++ src/matroska/0.10/matroska-ids.h	2014-01-17 09:51:05.000000000 +0100
 @@ -345,6 +345,7 @@
  #define GST_MATROSKA_CODEC_ID_VIDEO_SNOW         "V_SNOW"
@@ -583,8 +586,8 @@ diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.dif
  #define GST_MATROSKA_CODEC_ID_AUDIO_MPEG1_L1       "A_MPEG/L1"
  #define GST_MATROSKA_CODEC_ID_AUDIO_MPEG1_L2       "A_MPEG/L2"
 diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/matroska/matroska-parse.c src/matroska/0.10/matroska-parse.c
---- gst-plugins-good/gst/matroska/matroska-parse.c	2014-05-06 16:13:07.000000000 +0200
-+++ src/matroska/0.10/matroska-parse.c	2014-05-07 09:34:26.000000000 +0200
+--- gst-plugins-good/gst/matroska/matroska-parse.c	2014-06-23 18:21:36.000000000 +0200
++++ src/matroska/0.10/matroska-parse.c	2014-07-07 17:05:11.000000000 +0200
 @@ -96,7 +96,7 @@
      GST_STATIC_CAPS ("video/x-matroska; video/webm")
      );
@@ -922,17 +925,20 @@ diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.dif
    GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
  
    /* handle upwards state changes here */
-@@ -3235,7 +3237,7 @@
+@@ -3235,7 +3237,10 @@
  
    /* create an elementfactory for the matroska_parse element */
    if (!gst_element_register (plugin, "matroskaparse",
 -          GST_RANK_NONE, GST_TYPE_MATROSKA_PARSE))
 +          GST_RANK_NONE + 1, GST_TYPE_MATROSKA_PARSE))
++    return FALSE;
++  if (!gst_element_register (plugin, "matroskaparse-libde265",
++          GST_RANK_NONE + 1, GST_TYPE_MATROSKA_PARSE))
      return FALSE;
  
    return TRUE;
 diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/matroska/matroska-parse.h src/matroska/0.10/matroska-parse.h
---- gst-plugins-good/gst/matroska/matroska-parse.h	2014-05-06 16:12:23.000000000 +0200
+--- gst-plugins-good/gst/matroska/matroska-parse.h	2014-06-23 18:08:32.000000000 +0200
 +++ src/matroska/0.10/matroska-parse.h	2014-01-17 09:51:05.000000000 +0100
 @@ -34,15 +34,15 @@
  #define GST_TYPE_MATROSKA_PARSE \
@@ -969,7 +975,7 @@ diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.dif
  gboolean gst_matroska_parse_plugin_init (GstPlugin *plugin);
  
 diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/matroska/webm-mux.c src/matroska/0.10/webm-mux.c
---- gst-plugins-good/gst/matroska/webm-mux.c	2014-05-06 16:13:07.000000000 +0200
+--- gst-plugins-good/gst/matroska/webm-mux.c	2014-06-23 18:21:36.000000000 +0200
 +++ src/matroska/0.10/webm-mux.c	2014-05-07 09:34:26.000000000 +0200
 @@ -90,8 +90,7 @@
        &webm_videosink_templ);

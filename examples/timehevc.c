@@ -195,7 +195,8 @@ main (int argc, char *argv[])
     g_printerr ("Could not create source element\n");
     return -1;
   }
-  demuxer = gst_element_factory_make ("matroskademux", "matroska demuxer");
+  demuxer =
+      gst_element_factory_make ("matroskademux-libde265", "matroska demuxer");
   if (demuxer == NULL) {
     g_printerr ("Could not create demuxer element\n");
     return -1;
