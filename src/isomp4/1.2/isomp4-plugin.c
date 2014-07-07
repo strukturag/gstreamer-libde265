@@ -49,6 +49,9 @@ gst_isomp4_plugin_init (GstPlugin * plugin)
   if (!gst_element_register (plugin, "qtdemux",
           GST_RANK_PRIMARY + 1, GST_TYPE_QTDEMUX))
     return FALSE;
+  if (!gst_element_register (plugin, "qtdemux-libde265",
+          GST_RANK_PRIMARY + 1, GST_TYPE_QTDEMUX))
+    return FALSE;
 
   return TRUE;
 }

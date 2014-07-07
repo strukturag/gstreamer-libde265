@@ -1,6 +1,6 @@
 diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/isomp4/fourcc.h src/isomp4/0.10/fourcc.h
---- gst-plugins-good/gst/isomp4/fourcc.h	2014-06-23 18:08:32.000000000 +0200
-+++ src/isomp4/0.10/fourcc.h	2014-06-23 17:59:41.000000000 +0200
+--- gst-plugins-good/gst/isomp4/fourcc.h	2014-07-07 17:28:04.000000000 +0200
++++ src/isomp4/0.10/fourcc.h	2014-07-07 17:25:31.000000000 +0200
 @@ -188,6 +188,10 @@
  #define FOURCC_sosn     GST_MAKE_FOURCC('s','o','s','n')
  #define FOURCC_XMP_     GST_MAKE_FOURCC('X','M','P','_')
@@ -13,8 +13,8 @@ diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.dif
  
  /* SVQ3 fourcc */
 diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/isomp4/isomp4-plugin.c src/isomp4/0.10/isomp4-plugin.c
---- gst-plugins-good/gst/isomp4/isomp4-plugin.c	2014-06-23 18:08:32.000000000 +0200
-+++ src/isomp4/0.10/isomp4-plugin.c	2014-06-23 18:04:31.000000000 +0200
+--- gst-plugins-good/gst/isomp4/isomp4-plugin.c	2014-07-07 17:28:39.000000000 +0200
++++ src/isomp4/0.10/isomp4-plugin.c	2014-07-07 17:26:33.000000000 +0200
 @@ -22,17 +22,13 @@
  #ifdef HAVE_CONFIG_H
  #include "config.h"
@@ -35,12 +35,13 @@ diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.dif
  {
  #ifdef ENABLE_NLS
    setlocale (LC_ALL, "");
-@@ -52,23 +48,8 @@
+@@ -52,23 +48,11 @@
        gst_tag_merge_use_first);
  
    if (!gst_element_register (plugin, "qtdemux",
 -          GST_RANK_PRIMARY, GST_TYPE_QTDEMUX))
--    return FALSE;
++          GST_RANK_PRIMARY + 1, GST_TYPE_QTDEMUX))
+     return FALSE;
 -
 -  if (!gst_element_register (plugin, "rtpxqtdepay",
 -          GST_RANK_MARGINAL, GST_TYPE_RTP_XQT_DEPAY))
@@ -49,7 +50,8 @@ diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.dif
 -  if (!gst_qt_mux_register (plugin))
 -    return FALSE;
 -  if (!gst_qt_moov_recover_register (plugin))
-+          GST_RANK_PRIMARY+1, GST_TYPE_QTDEMUX))
++  if (!gst_element_register (plugin, "qtdemux-libde265",
++          GST_RANK_PRIMARY + 1, GST_TYPE_QTDEMUX))
      return FALSE;
  
    return TRUE;
@@ -61,8 +63,8 @@ diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.dif
 -    "ISO base media file format support (mp4, 3gpp, qt, mj2)",
 -    plugin_init, VERSION, "LGPL", GST_PACKAGE_NAME, GST_PACKAGE_ORIGIN);
 diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/isomp4/qtdemux.c src/isomp4/0.10/qtdemux.c
---- gst-plugins-good/gst/isomp4/qtdemux.c	2014-06-23 18:08:32.000000000 +0200
-+++ src/isomp4/0.10/qtdemux.c	2014-06-23 18:04:45.000000000 +0200
+--- gst-plugins-good/gst/isomp4/qtdemux.c	2014-07-07 17:28:39.000000000 +0200
++++ src/isomp4/0.10/qtdemux.c	2014-07-07 17:25:31.000000000 +0200
 @@ -51,8 +51,6 @@
   * with newer GLib versions (>= 2.31.0) */
  #define GLIB_DISABLE_DEPRECATION_WARNINGS
@@ -184,8 +186,8 @@ diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.dif
      default:
      {
 diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/isomp4/qtdemux_dump.h src/isomp4/0.10/qtdemux_dump.h
---- gst-plugins-good/gst/isomp4/qtdemux_dump.h	2014-06-23 18:08:32.000000000 +0200
-+++ src/isomp4/0.10/qtdemux_dump.h	2014-06-23 17:58:43.000000000 +0200
+--- gst-plugins-good/gst/isomp4/qtdemux_dump.h	2014-07-07 17:28:04.000000000 +0200
++++ src/isomp4/0.10/qtdemux_dump.h	2014-07-07 17:25:31.000000000 +0200
 @@ -22,7 +22,7 @@
  #define __GST_QTDEMUX_DUMP_H__
  
@@ -196,8 +198,8 @@ diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.dif
  G_BEGIN_DECLS
      gboolean qtdemux_dump_mvhd (GstQTDemux * qtdemux, GstByteReader * data,
 diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/isomp4/qtdemux_fourcc.h src/isomp4/0.10/qtdemux_fourcc.h
---- gst-plugins-good/gst/isomp4/qtdemux_fourcc.h	2014-06-23 18:08:32.000000000 +0200
-+++ src/isomp4/0.10/qtdemux_fourcc.h	2014-06-23 17:59:49.000000000 +0200
+--- gst-plugins-good/gst/isomp4/qtdemux_fourcc.h	2014-07-07 17:28:39.000000000 +0200
++++ src/isomp4/0.10/qtdemux_fourcc.h	2014-07-07 17:25:31.000000000 +0200
 @@ -178,6 +178,10 @@
  #define FOURCC_apcn     GST_MAKE_FOURCC('a','p','c','n')
  #define FOURCC_apco     GST_MAKE_FOURCC('a','p','c','o')
@@ -210,8 +212,8 @@ diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.dif
  /* SVQ3 fourcc */
  #define FOURCC_SEQH     GST_MAKE_FOURCC('S','E','Q','H')
 diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/isomp4/qtdemux_types.c src/isomp4/0.10/qtdemux_types.c
---- gst-plugins-good/gst/isomp4/qtdemux_types.c	2014-06-23 18:08:32.000000000 +0200
-+++ src/isomp4/0.10/qtdemux_types.c	2014-06-23 18:00:11.000000000 +0200
+--- gst-plugins-good/gst/isomp4/qtdemux_types.c	2014-07-07 17:28:04.000000000 +0200
++++ src/isomp4/0.10/qtdemux_types.c	2014-07-07 17:25:31.000000000 +0200
 @@ -171,6 +171,9 @@
        qtdemux_dump_mehd},
    {FOURCC_ovc1, "ovc1", 0},
