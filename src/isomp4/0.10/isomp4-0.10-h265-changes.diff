@@ -1,0 +1,226 @@
+diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/isomp4/fourcc.h src/isomp4/0.10/fourcc.h
+--- gst-plugins-good/gst/isomp4/fourcc.h	2014-07-07 17:28:04.000000000 +0200
++++ src/isomp4/0.10/fourcc.h	2014-07-07 17:25:31.000000000 +0200
+@@ -188,6 +188,10 @@
+ #define FOURCC_sosn     GST_MAKE_FOURCC('s','o','s','n')
+ #define FOURCC_XMP_     GST_MAKE_FOURCC('X','M','P','_')
+ #define FOURCC_uuid     GST_MAKE_FOURCC('u','u','i','d')
++#define FOURCC_H265     GST_MAKE_FOURCC('H','2','6','5')
++#define FOURCC_hev1     GST_MAKE_FOURCC('h','e','v','1')
++#define FOURCC_hvc1     GST_MAKE_FOURCC('h','v','c','1')
++#define FOURCC_hvcC     GST_MAKE_FOURCC('h','v','c','C')
+ 
+ 
+ /* SVQ3 fourcc */
+diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/isomp4/isomp4-plugin.c src/isomp4/0.10/isomp4-plugin.c
+--- gst-plugins-good/gst/isomp4/isomp4-plugin.c	2014-07-07 17:28:39.000000000 +0200
++++ src/isomp4/0.10/isomp4-plugin.c	2014-07-07 17:26:33.000000000 +0200
+@@ -22,17 +22,13 @@
+ #ifdef HAVE_CONFIG_H
+ #include "config.h"
+ #endif
+-#include "gst/gst-i18n-plugin.h"
+ 
+ #include "qtdemux.h"
+-#include "gstrtpxqtdepay.h"
+-#include "gstqtmux.h"
+-#include "gstqtmoovrecover.h"
+ 
+ #include <gst/pbutils/pbutils.h>
+ 
+-static gboolean
+-plugin_init (GstPlugin * plugin)
++gboolean
++gst_isomp4_plugin_init (GstPlugin * plugin)
+ {
+ #ifdef ENABLE_NLS
+   setlocale (LC_ALL, "");
+@@ -52,23 +48,11 @@
+       gst_tag_merge_use_first);
+ 
+   if (!gst_element_register (plugin, "qtdemux",
+-          GST_RANK_PRIMARY, GST_TYPE_QTDEMUX))
++          GST_RANK_PRIMARY + 1, GST_TYPE_QTDEMUX))
+     return FALSE;
+-
+-  if (!gst_element_register (plugin, "rtpxqtdepay",
+-          GST_RANK_MARGINAL, GST_TYPE_RTP_XQT_DEPAY))
+-    return FALSE;
+-
+-  if (!gst_qt_mux_register (plugin))
+-    return FALSE;
+-  if (!gst_qt_moov_recover_register (plugin))
++  if (!gst_element_register (plugin, "qtdemux-libde265",
++          GST_RANK_PRIMARY + 1, GST_TYPE_QTDEMUX))
+     return FALSE;
+ 
+   return TRUE;
+ }
+-
+-GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
+-    GST_VERSION_MINOR,
+-    "isomp4",
+-    "ISO base media file format support (mp4, 3gpp, qt, mj2)",
+-    plugin_init, VERSION, "LGPL", GST_PACKAGE_NAME, GST_PACKAGE_ORIGIN);
+diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/isomp4/qtdemux.c src/isomp4/0.10/qtdemux.c
+--- gst-plugins-good/gst/isomp4/qtdemux.c	2014-07-07 17:28:39.000000000 +0200
++++ src/isomp4/0.10/qtdemux.c	2014-07-07 17:25:31.000000000 +0200
+@@ -51,8 +51,6 @@
+  * with newer GLib versions (>= 2.31.0) */
+ #define GLIB_DISABLE_DEPRECATION_WARNINGS
+ 
+-#include "gst/gst-i18n-plugin.h"
+-
+ #include <glib/gprintf.h>
+ #include <gst/tag/tag.h>
+ 
+@@ -73,10 +71,16 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
++#include "../../common/codec-utils.h"
++
+ #ifdef HAVE_ZLIB
+ # include <zlib.h>
+ #endif
+ 
++#ifndef _
++#define _(x) (x)
++#endif
++
+ /* max. size considered 'sane' for non-mdat atoms */
+ #define QTDEMUX_MAX_ATOM_SIZE (25*1024*1024)
+ 
+@@ -4926,6 +4930,24 @@
+         qtdemux_parse_container (qtdemux, node, buffer + 0x34, end);
+         break;
+       }
++      case FOURCC_H265:
++      {
++        GST_MEMDUMP_OBJECT (qtdemux, "H265", buffer, end - buffer);
++        qtdemux_parse_container (qtdemux, node, buffer + 0x56, end);
++        break;
++      }
++      case FOURCC_hvc1:
++      {
++        GST_MEMDUMP_OBJECT (qtdemux, "hvc1", buffer, end - buffer);
++        qtdemux_parse_container (qtdemux, node, buffer + 0x56, end);
++        break;
++      }
++      case FOURCC_hev1:
++      {
++        GST_MEMDUMP_OBJECT (qtdemux, "hev1", buffer, end - buffer);
++        qtdemux_parse_container (qtdemux, node, buffer + 0x56, end);
++        break;
++      }
+       default:
+         if (!strcmp (type->name, "unknown"))
+           GST_MEMDUMP ("Unknown tag", buffer + 4, end - buffer - 4);
+@@ -6956,6 +6978,55 @@
+           gst_buffer_unref (buf);
+           break;
+         }
++        case FOURCC_H265:
++        case FOURCC_hvc1:
++        case FOURCC_hev1:
++        {
++          gint len = QT_UINT32 (stsd_data) - 0x66;
++          const guint8 *hevc_data = stsd_data + 0x66;
++
++          /* find hevc */
++          while (len >= 0x8) {
++            gint size;
++
++            if (QT_UINT32 (hevc_data) <= len)
++              size = QT_UINT32 (hevc_data) - 0x8;
++            else
++              size = len - 0x8;
++
++            if (size < 1)
++              /* No real data, so break out */
++              break;
++
++            switch (QT_FOURCC (hevc_data + 0x4)) {
++              case FOURCC_hvcC:
++              {
++                /* parse, if found */
++                GstBuffer *buf;
++
++                GST_DEBUG_OBJECT (qtdemux, "found avcC codec_data in stsd");
++
++                /* First 4 bytes are the length of the atom, the next 4 bytes
++                 * are the fourcc, the next 1 byte is the version, and the
++                 * subsequent bytes are sequence parameter set like data. */
++                gst_codec_utils_h265_caps_set_level_tier_and_profile
++                    (stream->caps, hevc_data + 8 + 1, size - 1);
++
++                buf = gst_buffer_new_and_alloc (size);
++                memcpy (GST_BUFFER_DATA (buf), hevc_data + 0x8, size);
++                gst_caps_set_simple (stream->caps,
++                    "codec_data", GST_TYPE_BUFFER, buf, NULL);
++                gst_buffer_unref (buf);
++                break;
++              }
++              default:
++                break;
++            }
++            len -= size + 8;
++            hevc_data += size + 8;
++          }
++          break;
++        }
+         default:
+           break;
+       }
+@@ -9562,6 +9633,12 @@
+           "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC ('W', 'V', 'C', '1'),
+           NULL);
+       break;
++    case FOURCC_hev1:
++    case FOURCC_hvc1:
++    case FOURCC_hvcC:
++      _codec ("HEVC/H.265");
++      caps = gst_caps_new_simple ("video/x-h265", NULL);
++      break;
+     case GST_MAKE_FOURCC ('k', 'p', 'c', 'd'):
+     default:
+     {
+diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/isomp4/qtdemux_dump.h src/isomp4/0.10/qtdemux_dump.h
+--- gst-plugins-good/gst/isomp4/qtdemux_dump.h	2014-07-07 17:28:04.000000000 +0200
++++ src/isomp4/0.10/qtdemux_dump.h	2014-07-07 17:25:31.000000000 +0200
+@@ -22,7 +22,7 @@
+ #define __GST_QTDEMUX_DUMP_H__
+ 
+ #include <gst/gst.h>
+-#include <qtdemux.h>
++#include "qtdemux.h"
+ 
+ G_BEGIN_DECLS
+     gboolean qtdemux_dump_mvhd (GstQTDemux * qtdemux, GstByteReader * data,
+diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/isomp4/qtdemux_fourcc.h src/isomp4/0.10/qtdemux_fourcc.h
+--- gst-plugins-good/gst/isomp4/qtdemux_fourcc.h	2014-07-07 17:28:39.000000000 +0200
++++ src/isomp4/0.10/qtdemux_fourcc.h	2014-07-07 17:25:31.000000000 +0200
+@@ -178,6 +178,10 @@
+ #define FOURCC_apcn     GST_MAKE_FOURCC('a','p','c','n')
+ #define FOURCC_apco     GST_MAKE_FOURCC('a','p','c','o')
+ #define FOURCC_ap4h     GST_MAKE_FOURCC('a','p','4','h')
++#define FOURCC_H265     GST_MAKE_FOURCC('H','2','6','5')
++#define FOURCC_hev1     GST_MAKE_FOURCC('h','e','v','1')
++#define FOURCC_hvc1     GST_MAKE_FOURCC('h','v','c','1')
++#define FOURCC_hvcC     GST_MAKE_FOURCC('h','v','c','C')
+ 
+ /* SVQ3 fourcc */
+ #define FOURCC_SEQH     GST_MAKE_FOURCC('S','E','Q','H')
+diff -Nur '--exclude=*~' '--exclude=*.o' '--exclude=README.txt' '--exclude=*.diff' '--exclude=*.vcproj' '--exclude=Makefile*' '--exclude=COPYING' gst-plugins-good/gst/isomp4/qtdemux_types.c src/isomp4/0.10/qtdemux_types.c
+--- gst-plugins-good/gst/isomp4/qtdemux_types.c	2014-07-07 17:28:04.000000000 +0200
++++ src/isomp4/0.10/qtdemux_types.c	2014-07-07 17:25:31.000000000 +0200
+@@ -171,6 +171,9 @@
+       qtdemux_dump_mehd},
+   {FOURCC_ovc1, "ovc1", 0},
+   {FOURCC_owma, "owma", 0},
++  {FOURCC_hvc1, "HEVC codec configuration", 0},
++  {FOURCC_hev1, "HEVC codec configuration", 0},
++  {FOURCC_hvcC, "HEVC codec configuration container", 0},
+   {FOURCC_tfdt, "Track fragment decode time", 0, qtdemux_dump_tfdt},
+   {0, "unknown", 0,},
+ };

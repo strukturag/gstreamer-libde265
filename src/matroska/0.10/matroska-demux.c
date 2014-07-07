@@ -69,7 +69,7 @@
 
 #include "matroska-demux.h"
 #include "matroska-ids.h"
-#include "../codec-utils.h"
+#include "../../common/codec-utils.h"
 
 GST_DEBUG_CATEGORY_STATIC (matroskademux_debug);
 #define GST_CAT_DEFAULT matroskademux_debug
