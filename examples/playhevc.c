@@ -26,144 +26,144 @@
 #endif
 
 static gboolean
-bus_callback(GstBus *bus, GstMessage *msg, gpointer data)
+bus_callback (GstBus * bus, GstMessage * msg, gpointer data)
 {
-    GMainLoop *loop = (GMainLoop *) data;
+  GMainLoop *loop = (GMainLoop *) data;
 
-    switch (GST_MESSAGE_TYPE(msg)) {
+  switch (GST_MESSAGE_TYPE (msg)) {
     case GST_MESSAGE_EOS:
-        {
-            g_print("End of stream\n");
-            g_main_loop_quit(loop);
-        }
-        break;
+    {
+      g_print ("End of stream\n");
+      g_main_loop_quit (loop);
+    }
+      break;
 
     case GST_MESSAGE_ERROR:
-        {
-            gchar  *debug;
-            GError *error;
+    {
+      gchar *debug;
+      GError *error;
 
-            gst_message_parse_error(msg, &error, &debug);
-            g_free(debug);
+      gst_message_parse_error (msg, &error, &debug);
+      g_free (debug);
 
-            g_printerr ("Error: %s\n", error->message);
-            g_error_free(error);
+      g_printerr ("Error: %s\n", error->message);
+      g_error_free (error);
 
-            g_main_loop_quit(loop);
-        }
-        break;
+      g_main_loop_quit (loop);
+    }
+      break;
 
     case GST_MESSAGE_APPLICATION:
-        {
-            const GstStructure *s;
+    {
+      const GstStructure *s;
 
-            s = gst_message_get_structure(msg);
-            if (gst_structure_has_name(s, "SignalInterrupt")) {
-                g_main_loop_quit(loop);
-            }
-        }
-        break;
+      s = gst_message_get_structure (msg);
+      if (gst_structure_has_name (s, "SignalInterrupt")) {
+        g_main_loop_quit (loop);
+      }
+    }
+      break;
 
     default:
-        break;
-    }
+      break;
+  }
 
-    return TRUE;
+  return TRUE;
 }
 
 #ifdef G_OS_UNIX
 static gboolean
-sigint_handler(gpointer data)
+sigint_handler (gpointer data)
 {
-    GstElement *pipeline = (GstElement *) data;
+  GstElement *pipeline = (GstElement *) data;
 
-    gst_element_post_message(GST_ELEMENT(pipeline),
-        gst_message_new_application(GST_OBJECT(pipeline),
-            gst_structure_new("SignalInterrupt", "message", G_TYPE_STRING,
-                "Pipeline interrupted", NULL)));    
+  gst_element_post_message (GST_ELEMENT (pipeline),
+      gst_message_new_application (GST_OBJECT (pipeline),
+          gst_structure_new ("SignalInterrupt", "message", G_TYPE_STRING,
+              "Pipeline interrupted", NULL)));
 
-    return TRUE;
+  return TRUE;
 }
 #endif
 
 int
-main(int argc, char *argv[])
+main (int argc, char *argv[])
 {
-    gint fps = 25;
-    GMainLoop *loop;
-    GstElement *source;
-    GstElement *decoder;
-    GstElement *sink;
-    GstElement *pipeline;
-    GstBus *bus;
-    guint bus_watch_id;
-    GOptionEntry options[] = {
-        {"fps", 'f', 0, G_OPTION_ARG_INT, &fps,
-            "Framerate to playback stream [default: 25]", "N"},
-        {NULL}
-    };
-    GOptionContext *ctx;
-    GError *err = NULL;
+  gint fps = 25;
+  GMainLoop *loop;
+  GstElement *source;
+  GstElement *decoder;
+  GstElement *sink;
+  GstElement *pipeline;
+  GstBus *bus;
+  guint bus_watch_id;
+  GOptionEntry options[] = {
+    {"fps", 'f', 0, G_OPTION_ARG_INT, &fps,
+        "Framerate to playback stream [default: 25]", "N"},
+    {NULL}
+  };
+  GOptionContext *ctx;
+  GError *err = NULL;
 
-    ctx = g_option_context_new("<filename>");
-    g_option_context_add_main_entries(ctx, options, NULL);
-    g_option_context_add_group(ctx, gst_init_get_option_group());
-    if (!g_option_context_parse(ctx, &argc, &argv, &err)) {
-        if (err) {
-            g_printerr("Error initializing: %s\n", GST_STR_NULL(err->message));
-        } else {
-            g_printerr("Error initializing: Unknown error!\n");
-        }
-        return -1;
+  ctx = g_option_context_new ("<filename>");
+  g_option_context_add_main_entries (ctx, options, NULL);
+  g_option_context_add_group (ctx, gst_init_get_option_group ());
+  if (!g_option_context_parse (ctx, &argc, &argv, &err)) {
+    if (err) {
+      g_printerr ("Error initializing: %s\n", GST_STR_NULL (err->message));
+    } else {
+      g_printerr ("Error initializing: Unknown error!\n");
     }
-    g_option_context_free(ctx);
-    
-    if (argc != 2) {
-        g_printerr("Usage: %s filename\n", argv[0]);
-        return -1;
-    }
+    return -1;
+  }
+  g_option_context_free (ctx);
 
-    pipeline = gst_pipeline_new("example-player");
-    source = gst_element_factory_make("filesrc", "file-source");
-    if (source == NULL) {
-        g_printerr("Could not create source element\n");
-        return -1;
-    }
-    decoder = gst_element_factory_make("libde265dec", "libde265 decoder");
-    if (decoder == NULL) {
-        g_printerr("Could not create decoder element, please check your " \
-            "GStreamer plugin path.\n");
-        return -1;
-    }
-    sink = gst_element_factory_make("autovideosink", "video-output");
-    if (sink == NULL) {
-        g_printerr("Could not create sink element.\n");
-        return -1;
-    }
+  if (argc != 2) {
+    g_printerr ("Usage: %s filename\n", argv[0]);
+    return -1;
+  }
 
-    g_object_set(G_OBJECT(source), "location", argv[1], NULL);
-    g_object_set(G_OBJECT(decoder), "mode", 1, NULL);
-    g_object_set(G_OBJECT(decoder), "framerate", fps, 1, NULL);
+  pipeline = gst_pipeline_new ("example-player");
+  source = gst_element_factory_make ("filesrc", "file-source");
+  if (source == NULL) {
+    g_printerr ("Could not create source element\n");
+    return -1;
+  }
+  decoder = gst_element_factory_make ("libde265dec", "libde265 decoder");
+  if (decoder == NULL) {
+    g_printerr ("Could not create decoder element, please check your "
+        "GStreamer plugin path.\n");
+    return -1;
+  }
+  sink = gst_element_factory_make ("autovideosink", "video-output");
+  if (sink == NULL) {
+    g_printerr ("Could not create sink element.\n");
+    return -1;
+  }
 
-    loop = g_main_loop_new(NULL, FALSE);
-    bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
-    bus_watch_id = gst_bus_add_watch(bus, bus_callback, loop);
+  g_object_set (G_OBJECT (source), "location", argv[1], NULL);
+  g_object_set (G_OBJECT (decoder), "mode", 1, NULL);
+  g_object_set (G_OBJECT (decoder), "framerate", fps, 1, NULL);
+
+  loop = g_main_loop_new (NULL, FALSE);
+  bus = gst_pipeline_get_bus (GST_PIPELINE (pipeline));
+  bus_watch_id = gst_bus_add_watch (bus, bus_callback, loop);
 #ifdef G_OS_UNIX
-    g_unix_signal_add(SIGINT, (GSourceFunc) sigint_handler, pipeline);
+  g_unix_signal_add (SIGINT, (GSourceFunc) sigint_handler, pipeline);
 #endif
 
-    gst_bin_add_many(GST_BIN(pipeline), source, decoder, sink, NULL);
+  gst_bin_add_many (GST_BIN (pipeline), source, decoder, sink, NULL);
 
-    gst_element_link_many(source, decoder, sink, NULL);
+  gst_element_link_many (source, decoder, sink, NULL);
 
-    gst_element_set_state(pipeline, GST_STATE_PLAYING);
-    g_print("Playing...\n");
-    g_main_loop_run(loop);
+  gst_element_set_state (pipeline, GST_STATE_PLAYING);
+  g_print ("Playing...\n");
+  g_main_loop_run (loop);
 
-    gst_element_set_state(pipeline, GST_STATE_NULL);
-    gst_object_unref(GST_OBJECT(pipeline));
-    g_source_remove(bus_watch_id);
-    g_main_loop_unref(loop);
-    gst_deinit();
-    return 0;
+  gst_element_set_state (pipeline, GST_STATE_NULL);
+  gst_object_unref (GST_OBJECT (pipeline));
+  g_source_remove (bus_watch_id);
+  g_main_loop_unref (loop);
+  gst_deinit ();
+  return 0;
 }
