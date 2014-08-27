@@ -649,7 +649,7 @@ gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse, VIDEO_STATE * state)
                 GST_ELEMENT_ERROR (parse, STREAM, DECODE,
                     ("Failed to push data: %s (%d)", de265_get_error_text (err),
                         err), (NULL));
-                return NULL;
+                return FALSE;
               }
               pos += 2 + nal_size;
             }
