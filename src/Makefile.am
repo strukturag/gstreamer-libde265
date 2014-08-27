@@ -5,7 +5,10 @@ libgstlibde265_la_SOURCES = \
 	libde265-dec.c \
 	libde265-dec.h \
 	common/codec-utils.h \
-	common/codec-utils.c \
+	common/codec-utils.c
+
+if INCLUDE_MATROSKA_DEMUXER
+libgstlibde265_la_SOURCES += \
 	matroska/$(USE_GSTREAMER_VERSION)/ebml-ids.h \
 	matroska/$(USE_GSTREAMER_VERSION)/ebml-read.c \
 	matroska/$(USE_GSTREAMER_VERSION)/ebml-read.h \
@@ -18,7 +21,11 @@ libgstlibde265_la_SOURCES = \
 	matroska/$(USE_GSTREAMER_VERSION)/matroska-parse.c \
 	matroska/$(USE_GSTREAMER_VERSION)/matroska-parse.h \
 	matroska/$(USE_GSTREAMER_VERSION)/matroska-read-common.c \
-	matroska/$(USE_GSTREAMER_VERSION)/matroska-read-common.h \
+	matroska/$(USE_GSTREAMER_VERSION)/matroska-read-common.h
+endif
+
+if INCLUDE_MP4_DEMUXER
+libgstlibde265_la_SOURCES += \
 	isomp4/$(USE_GSTREAMER_VERSION)/qtatomparser.h   \
 	isomp4/$(USE_GSTREAMER_VERSION)/qtdemux.h        \
 	isomp4/$(USE_GSTREAMER_VERSION)/qtdemux_types.h  \
@@ -41,37 +48,54 @@ libgstlibde265_la_SOURCES = \
 	isomp4/$(USE_GSTREAMER_VERSION)/atomsrecovery.c  \
 	isomp4/$(USE_GSTREAMER_VERSION)/descriptors.c    \
 	isomp4/$(USE_GSTREAMER_VERSION)/properties.c
+endif
 
 libgstlibde265_la_CFLAGS = \
 	$(GST_CFLAGS) \
 	$(GST_PLUGIN_CFLAGS) \
-	$(libde265_CFLAGS) \
+	$(libde265_CFLAGS)
+
+libgstlibde265_la_LIBADD = \
+	$(GST_LIBS) \
+	$(GST_PLUGIN_LIBS) \
+	$(libde265_LIBS)
+
+if INCLUDE_MATROSKA_DEMUXER
+libgstlibde265_la_CFLAGS += \
 	$(zlib_CFLAGS) \
 	$(bz2_CFLAGS) \
 	-DHAVE_ZLIB \
 	-DHAVE_BZ2
-libgstlibde265_la_LIBADD = \
-	$(GST_LIBS) \
-	$(GST_PLUGIN_LIBS) \
-	$(libde265_LIBS) \
+
+libgstlibde265_la_LIBADD += \
 	$(zlib_LIBS) \
 	$(bz2_LIBS)
+endif
+
 libgstlibde265_la_LDFLAGS = \
 	$(GST_LDFLAGS) \
 	$(GST_PLUGIN_LDFLAGS)
+
 libgstlibde265_la_LIBTOOLFLAGS = \
 	--tag=disable-static
 
 noinst_HEADERS = \
 	libde265-dec.h \
-	common/codec-utils.h \
+	common/codec-utils.h
+
+if INCLUDE_MATROSKA_DEMUXER
+noinst_HEADERS += \
 	matroska/$(USE_GSTREAMER_VERSION)/ebml-ids.h \
 	matroska/$(USE_GSTREAMER_VERSION)/ebml-read.h \
 	matroska/$(USE_GSTREAMER_VERSION)/lzo.h \
 	matroska/$(USE_GSTREAMER_VERSION)/matroska-demux.h \
 	matroska/$(USE_GSTREAMER_VERSION)/matroska-ids.h \
 	matroska/$(USE_GSTREAMER_VERSION)/matroska-parse.h \
-	matroska/$(USE_GSTREAMER_VERSION)/matroska-read-common.h \
+	matroska/$(USE_GSTREAMER_VERSION)/matroska-read-common.h
+endif
+
+if INCLUDE_MP4_DEMUXER
+noinst_HEADERS += \
 	isomp4/$(USE_GSTREAMER_VERSION)/qtatomparser.h   \
 	isomp4/$(USE_GSTREAMER_VERSION)/qtdemux.h        \
 	isomp4/$(USE_GSTREAMER_VERSION)/qtdemux_types.h  \
@@ -85,6 +109,7 @@ noinst_HEADERS = \
 	isomp4/$(USE_GSTREAMER_VERSION)/properties.h     \
 	isomp4/$(USE_GSTREAMER_VERSION)/fourcc.h         \
 	isomp4/$(USE_GSTREAMER_VERSION)/ftypcc.h
+endif
 
 EXTRA_DIST = \
 	common/*.c \

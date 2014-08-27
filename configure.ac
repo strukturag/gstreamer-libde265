@@ -160,9 +160,15 @@ CFLAGS="$CFLAGS $GST_CFLAGS"
 gst_version=unknown
 # The order of these tests is important.
 AC_TRY_COMPILE([#include <gst/gst.h>],
+[#if !GST_CHECK_VERSION(1,4,0)
+#error "not 1.4.0"
+#endif], USE_GSTREAMER_VERSION=1.4 gst_version=1.4.0)
+if test $gst_version = unknown; then
+AC_TRY_COMPILE([#include <gst/gst.h>],
 [#if !GST_CHECK_VERSION(1,2,0)
 #error "not 1.2.0"
 #endif], USE_GSTREAMER_VERSION=1.2 gst_version=1.2.0)
+fi
 if test $gst_version = unknown; then
 AC_TRY_COMPILE([#include <gst/gst.h>],
 [#if !GST_CHECK_VERSION(1,0,0)
@@ -173,27 +179,32 @@ if test $gst_version = unknown; then
 USE_GSTREAMER_VERSION=0.10
 gst_version=0.10.0
 fi
-AC_SUBST(USE_GSTREAMER_VERSION) 
+AC_SUBST(USE_GSTREAMER_VERSION)
 AC_MSG_RESULT($gst_version)
 CFLAGS="$save_CFLAGS"
 
-PKG_CHECK_MODULES(zlib, [zlib], [
-  AC_SUBST(zlib_CFLAGS)
-  AC_SUBST(zlib_LIBS)
-], [
-  AC_MSG_ERROR([You need to install the zlib development package.])
-])
+AM_CONDITIONAL([INCLUDE_MATROSKA_DEMUXER], [test "$USE_GSTREAMER_VERSION" != "1.4"])
+AM_CONDITIONAL([INCLUDE_MP4_DEMUXER], [test "$USE_GSTREAMER_VERSION" != "1.4"])
 
-save_LIBS="$LIBS"
-AC_SEARCH_LIBS([BZ2_bzDecompressInit], [bz2], [
-  bz2_CFLAGS=""
-  bz2_LIBS="-lbz2"
-  AC_SUBST(bz2_CFLAGS)
-  AC_SUBST(bz2_LIBS)
-], [
-  AC_MSG_ERROR([You need to install the bz2 development package.])
-])
-LIBS="$save_LIBS"
+if eval "test $USE_GSTREAMER_VERSION != 1.4" ; then
+  PKG_CHECK_MODULES(zlib, [zlib], [
+    AC_SUBST(zlib_CFLAGS)
+    AC_SUBST(zlib_LIBS)
+  ], [
+    AC_MSG_ERROR([You need to install the zlib development package.])
+  ])
+
+  save_LIBS="$LIBS"
+  AC_SEARCH_LIBS([BZ2_bzDecompressInit], [bz2], [
+    bz2_CFLAGS=""
+    bz2_LIBS="-lbz2"
+    AC_SUBST(bz2_CFLAGS)
+    AC_SUBST(bz2_LIBS)
+  ], [
+    AC_MSG_ERROR([You need to install the bz2 development package.])
+  ])
+  LIBS="$save_LIBS"
+fi
 
 PKG_CHECK_MODULES(libde265, [libde265 >= 0.7], [
   AC_SUBST(libde265_CFLAGS)
