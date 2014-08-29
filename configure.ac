@@ -187,6 +187,31 @@ AM_CONDITIONAL([INCLUDE_MATROSKA_DEMUXER], [test "$USE_GSTREAMER_VERSION" != "1.
 AM_CONDITIONAL([INCLUDE_MP4_DEMUXER], [test "$USE_GSTREAMER_VERSION" != "1.4"])
 
 if eval "test $USE_GSTREAMER_VERSION != 1.4" ; then
+  PKG_CHECK_MODULES(GST_AUDIO_TAG, [
+    gstreamer-audio-$GSTREAMER_VERSION >= $GST_REQUIRED
+    gstreamer-tag-$GSTREAMER_VERSION >= $GST_REQUIRED
+  ], [
+    GST_CFLAGS="$GST_CFLAGS $GST_AUDIO_TAG_CFLAGS"
+    GST_LIBS="$GST_LIBS $GST_AUDIO_TAG_LIBS"
+    GST_LDFLAGS="$GST_LDFLAGS $GST_AUDIO_TAG_LDFLAGS"
+  ], [
+    AC_MSG_ERROR([
+      Can't find the following GStreamer development packages:
+
+        gstreamer-audio-$GSTREAMER_VERSION >= $GST_REQUIRED
+        gstreamer-tag-$GSTREAMER_VERSION >= $GST_REQUIRED
+
+      Please make sure you have the necessary GStreamer-$GSTREAMER_VERSION
+      development headers installed.
+
+      On debian/Ubuntu systems you will probably need to install the
+      'libgstreamer$GSTREAMER_VERSION-dev' and 'libgstreamer-plugins-base$GSTREAMER_VERSION-dev' packages.
+
+     On RPM-based systems you will probably need to install the
+      'gstreamer-devel-$GSTREAMER_VERSION' package.
+    ])
+  ])
+
   PKG_CHECK_MODULES(zlib, [zlib], [
     AC_SUBST(zlib_CFLAGS)
     AC_SUBST(zlib_LIBS)
