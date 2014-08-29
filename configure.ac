@@ -1,7 +1,7 @@
 dnl required version of autoconf
 AC_PREREQ([2.53])
 
-AC_INIT([gstreamer-libde265],[0.1.10])
+AC_INIT([gstreamer-libde265],[0.1.11])
 
 dnl required versions of gstreamer
 GST_REQUIRED=1.0.0
