@@ -276,7 +276,7 @@ gst_libde265_dec_release_frame_ref (struct GstLibde265FrameRef *ref)
   }
   gst_video_codec_frame_unref (ref->frame);
   gst_buffer_replace (&ref->buffer, NULL);
-  free (ref);
+  g_free (ref);
 }
 
 static int
@@ -322,7 +322,7 @@ gst_libde265_dec_get_buffer (de265_decoder_context * ctx,
   }
 
   struct GstLibde265FrameRef *ref =
-      (struct GstLibde265FrameRef *) calloc (1, sizeof (*ref));
+      (struct GstLibde265FrameRef *) g_malloc0 (sizeof (*ref));
   g_assert (ref != NULL);
   ref->decoder = base;
   ref->frame = frame;
