@@ -60,12 +60,15 @@ enum
   PROP_0,
   PROP_MODE,
   PROP_FRAMERATE,
+  PROP_MAX_THREADS,
   PROP_LAST
 };
 
 #define DEFAULT_MODE        GST_TYPE_LIBDE265_DEC_PACKETIZED
 #define DEFAULT_FPS_N       0
 #define DEFAULT_FPS_D       1
+#define DEFAULT_MAX_THREADS 0
+
 
 #define GST_TYPE_LIBDE265_DEC_MODE (gst_libde265_dec_mode_get_type ())
 static GType
@@ -133,6 +136,12 @@ gst_libde265_dec_class_init (GstLibde265DecClass * klass)
           DEFAULT_FPS_N, DEFAULT_FPS_D,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
+  g_object_class_install_property (gobject_class, PROP_MAX_THREADS,
+      g_param_spec_int ("max-threads", "Maximum decode threads",
+          "Maximum number of worker threads to spawn. (0 = auto)",
+          0, G_MAXINT, DEFAULT_MAX_THREADS,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
   decoder_class->start = GST_DEBUG_FUNCPTR (gst_libde265_dec_start);
   decoder_class->stop = GST_DEBUG_FUNCPTR (gst_libde265_dec_stop);
   decoder_class->set_format = GST_DEBUG_FUNCPTR (gst_libde265_dec_set_format);
@@ -178,6 +187,7 @@ gst_libde265_dec_init (GstLibde265Dec * dec)
   dec->mode = DEFAULT_MODE;
   dec->fps_n = DEFAULT_FPS_N;
   dec->fps_d = DEFAULT_FPS_D;
+  dec->max_threads = DEFAULT_MAX_THREADS;
   dec->length_size = 4;
   _gst_libde265_dec_reset_decoder (dec);
 #if GST_CHECK_VERSION(1,0,0)
@@ -231,6 +241,14 @@ gst_libde265_dec_set_property (GObject * object, guint prop_id,
       dec->fps_d = gst_value_get_fraction_denominator (value);
       GST_DEBUG ("Framerate set to %d/%d", dec->fps_n, dec->fps_d);
       break;
+    case PROP_MAX_THREADS:
+      dec->max_threads = g_value_get_int (value);
+      if (dec->max_threads) {
+        GST_DEBUG_OBJECT (dec, "Max. threads set to %d", dec->max_threads);
+      } else {
+        GST_DEBUG_OBJECT (dec, "Max. threads set to auto");
+      }
+      break;
     default:
       break;
   }
@@ -248,6 +266,9 @@ gst_libde265_dec_get_property (GObject * object, guint prop_id,
       break;
     case PROP_FRAMERATE:
       gst_value_set_fraction (value, dec->fps_n, dec->fps_d);
+      break;
+    case PROP_MAX_THREADS:
+      g_value_set_int (value, dec->max_threads);
       break;
     default:
       break;
@@ -398,6 +419,7 @@ static gboolean
 gst_libde265_dec_start (VIDEO_DECODER_BASE * parse)
 {
   GstLibde265Dec *dec = GST_LIBDE265_DEC (parse);
+  int threads = dec->max_threads;
 
   _gst_libde265_dec_free_decoder (dec);
   dec->ctx = de265_new_decoder ();
@@ -405,27 +427,30 @@ gst_libde265_dec_start (VIDEO_DECODER_BASE * parse)
     return FALSE;
   }
 
-  int threads;
+  if (threads == 0) {
 #if defined(_SC_NPROC_ONLN)
-  threads = sysconf (_SC_NPROC_ONLN);
+    threads = sysconf (_SC_NPROC_ONLN);
 #elif defined(_SC_NPROCESSORS_ONLN)
-  threads = sysconf (_SC_NPROCESSORS_ONLN);
+    threads = sysconf (_SC_NPROCESSORS_ONLN);
 #else
 #warning "Don't know how to get number of CPU cores, will use the default thread count"
-  threads = DEFAULT_THREAD_COUNT;
-#endif
-  if (threads <= 0) {
     threads = DEFAULT_THREAD_COUNT;
+#endif
+    if (threads <= 0) {
+      threads = DEFAULT_THREAD_COUNT;
+    }
+    // XXX: We start more threads than cores for now, as some threads
+    // might get blocked while waiting for dependent data. Having more
+    // threads increases decoding speed by about 10%
+    threads *= 2;
   }
-  // XXX: We start more threads than cores for now, as some threads
-  // might get blocked while waiting for dependent data. Having more
-  // threads increases decoding speed by about 10%
-  threads *= 2;
-  if (threads > 32) {
-    // TODO: this limit should come from the libde265 headers
-    threads = 32;
+  if (threads > 1) {
+    if (threads > 32) {
+      // TODO: this limit should come from the libde265 headers
+      threads = 32;
+    }
+    de265_start_worker_threads (dec->ctx, threads);
   }
-  de265_start_worker_threads (dec->ctx, threads);
   GST_INFO ("Using libde265 %s with %d worker threads", de265_get_version (),
       threads);
 

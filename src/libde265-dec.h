@@ -69,7 +69,7 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_LIBDE265_DEC,GstLibde265Dec))
 #define GST_LIBDE265_DEC_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_LIBDE265_DEC,GstLibde265DecClass))
-  
+
 
 typedef enum {
   GST_TYPE_LIBDE265_DEC_PACKETIZED,
@@ -87,6 +87,7 @@ typedef struct _GstLibde265Dec {
     int                     length_size;
     int                     fps_n;
     int                     fps_d;
+    int                     max_threads;
     int                     buffer_full;
     void                    *codec_data;
     int                     codec_data_size;
