@@ -622,7 +622,7 @@ gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse, VIDEO_STATE * state)
             int j;
             if (pos + 3 > size) {
               GST_ELEMENT_ERROR (parse, STREAM, DECODE,
-                  ("Buffer underrun in extra header (%d >= %d)", pos + 3,
+                  ("Buffer underrun in extra header (%d >= %ld)", pos + 3,
                       size), (NULL));
               return FALSE;
             }
@@ -632,14 +632,14 @@ gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse, VIDEO_STATE * state)
             for (j = 0; j < nal_count; j++) {
               if (pos + 2 > size) {
                 GST_ELEMENT_ERROR (parse, STREAM, DECODE,
-                    ("Buffer underrun in extra nal header (%d >= %d)", pos + 2,
+                    ("Buffer underrun in extra nal header (%d >= %ld)", pos + 2,
                         size), (NULL));
                 return FALSE;
               }
               int nal_size = data[pos] << 8 | data[pos + 1];
               if (pos + 2 + nal_size > size) {
                 GST_ELEMENT_ERROR (parse, STREAM, DECODE,
-                    ("Buffer underrun in extra nal (%d >= %d)",
+                    ("Buffer underrun in extra nal (%d >= %ld)",
                         pos + 2 + nal_size, size), (NULL));
                 return FALSE;
               }
