@@ -34,9 +34,9 @@ G_BEGIN_DECLS
 #define GST_TYPE_MATROSKA_MUX \
   (gst_matroska_mux_get_type ())
 #define GST_MATROSKA_MUX(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), GST_TYPE_MATROSKA_MUX, GstMatroskaMux))
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), GST_TYPE_MATROSKA_MUX, GstMatroskaMuxH265))
 #define GST_MATROSKA_MUX_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), GST_TYPE_MATROSKA_MUX, GstMatroskaMuxClass))
+  (G_TYPE_CHECK_CLASS_CAST ((klass), GST_TYPE_MATROSKA_MUX, GstMatroskaMuxH265Class))
 #define GST_IS_MATROSKA_MUX(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GST_TYPE_MATROSKA_MUX))
 #define GST_IS_MATROSKA_MUX_CLASS(klass) \
@@ -70,9 +70,9 @@ typedef struct
 GstMatroskaPad;
 
 
-typedef struct _GstMatroskaMux {
+typedef struct _GstMatroskaMuxH265 {
   GstElement     element;
-  
+
   /* < private > */
 
   /* pads */
@@ -100,10 +100,10 @@ typedef struct _GstMatroskaMux {
   guint          num_indexes;
   GstClockTimeDiff min_index_interval;
   gboolean       streamable;
- 
+
   /* timescale in the file */
   guint64        time_scale;
-  /* based on timescale, limit of nanoseconds you can have in a cluster */ 
+  /* based on timescale, limit of nanoseconds you can have in a cluster */
   guint64        max_cluster_duration;
 
   /* length, position (time, ns) */
@@ -129,11 +129,11 @@ typedef struct _GstMatroskaMux {
 
   /* GstForceKeyUnit event */
   GstEvent       *force_key_unit_event;
-} GstMatroskaMux;
+} GstMatroskaMuxH265;
 
-typedef struct _GstMatroskaMuxClass {
+typedef struct _GstMatroskaMuxH265Class {
   GstElementClass parent;
-} GstMatroskaMuxClass;
+} GstMatroskaMuxH265Class;
 
 GType   gst_matroska_mux_get_type (void);
 

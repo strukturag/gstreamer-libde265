@@ -7,6 +7,12 @@ libgstlibde265_la_SOURCES = \
 	common/codec-utils.h \
 	common/codec-utils.c
 
+if !USE_GSTREAMER_010
+libgstlibde265_la_SOURCES += \
+	libde265-enc.c \
+	libde265-enc.h
+endif
+
 if INCLUDE_MATROSKA_DEMUXER
 libgstlibde265_la_SOURCES += \
 	matroska/$(USE_GSTREAMER_VERSION)/ebml-ids.h \
@@ -22,6 +28,13 @@ libgstlibde265_la_SOURCES += \
 	matroska/$(USE_GSTREAMER_VERSION)/matroska-parse.h \
 	matroska/$(USE_GSTREAMER_VERSION)/matroska-read-common.c \
 	matroska/$(USE_GSTREAMER_VERSION)/matroska-read-common.h
+if !USE_GSTREAMER_010
+libgstlibde265_la_SOURCES += \
+	matroska/$(USE_GSTREAMER_VERSION)/ebml-write.c \
+	matroska/$(USE_GSTREAMER_VERSION)/ebml-write.h \
+	matroska/$(USE_GSTREAMER_VERSION)/matroska-mux.c \
+	matroska/$(USE_GSTREAMER_VERSION)/matroska-mux.h
+endif
 endif
 
 if INCLUDE_MP4_DEMUXER

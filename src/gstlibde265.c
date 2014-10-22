@@ -29,12 +29,18 @@
 #include <libde265/de265.h>
 
 #include "libde265-dec.h"
+#if GST_CHECK_VERSION(1,0,0)
+#include "libde265-enc.h"
+#endif
 
 #if !GST_CHECK_VERSION(1,4,0)
 GST_DEBUG_CATEGORY_EXTERN (matroskareadcommon_debug);
 
 void gst_matroska_register_tags (void);
 gboolean gst_matroska_demux_plugin_init (GstPlugin * plugin);
+#if GST_CHECK_VERSION(1,0,0)
+gboolean gst_matroska_mux_plugin_init (GstPlugin * plugin);
+#endif
 gboolean gst_matroska_parse_plugin_init (GstPlugin * plugin);
 gboolean gst_isomp4_plugin_init (GstPlugin * plugin);
 #endif
@@ -52,10 +58,16 @@ plugin_init (GstPlugin * plugin)
       "Matroska demuxer/parser shared debug");
 
   ret = gst_matroska_demux_plugin_init (plugin);
+#if GST_CHECK_VERSION(1,0,0)
+  ret &= gst_matroska_mux_plugin_init (plugin);
+#endif
   ret &= gst_matroska_parse_plugin_init (plugin);
   ret &= gst_isomp4_plugin_init (plugin);
 #endif
   ret &= gst_libde265_dec_plugin_init (plugin);
+#if GST_CHECK_VERSION(1,0,0)
+  ret &= gst_libde265_enc_plugin_init (plugin);
+#endif
   return ret;
 }
 
@@ -65,7 +77,7 @@ GST_PLUGIN_DEFINE (GST_VERSION_MAJOR, GST_VERSION_MINOR,
 #else
     "gstlibde265",
 #endif
-    "HEVC/H.265 decoder using libde265", plugin_init, VERSION, "LGPL",
+    "HEVC/H.265 codec using libde265", plugin_init, VERSION, "LGPL",
 #if GST_CHECK_VERSION(1,0,0)
     "gstreamer1.0-libde265",
 #else

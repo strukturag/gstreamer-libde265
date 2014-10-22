@@ -103,6 +103,8 @@ static GstStaticPadTemplate videosink_templ =
         COMMON_VIDEO_CAPS "; "
         "video/x-h264, stream-format=avc, alignment=au, "
         COMMON_VIDEO_CAPS "; "
+        "video/x-h265, stream-format=hvc1, alignment=au, "
+        COMMON_VIDEO_CAPS "; "
         "video/x-divx, "
         COMMON_VIDEO_CAPS "; "
         "video/x-huffyuv, "
@@ -194,8 +196,8 @@ G_LOCK_DEFINE_STATIC (used_uids);
 static gpointer parent_class;   /* NULL */
 
 /* Matroska muxer destructor */
-static void gst_matroska_mux_class_init (GstMatroskaMuxClass * klass);
-static void gst_matroska_mux_init (GstMatroskaMux * mux, gpointer g_class);
+static void gst_matroska_mux_class_init (GstMatroskaMuxH265Class * klass);
+static void gst_matroska_mux_init (GstMatroskaMuxH265 * mux, gpointer g_class);
 static void gst_matroska_mux_finalize (GObject * object);
 
 /* Pads collected callback */
@@ -251,20 +253,20 @@ gst_matroska_mux_get_type (void)
 
   if (object_type == 0) {
     static const GTypeInfo object_info = {
-      sizeof (GstMatroskaMuxClass),
+      sizeof (GstMatroskaMuxH265Class),
       NULL,                     /* base_init */
       NULL,                     /* base_finalize */
       (GClassInitFunc) gst_matroska_mux_class_init,
       NULL,                     /* class_finalize */
       NULL,                     /* class_data */
-      sizeof (GstMatroskaMux),
+      sizeof (GstMatroskaMuxH265),
       0,                        /* n_preallocs */
       (GInstanceInitFunc) gst_matroska_mux_init
     };
     const GInterfaceInfo iface_info = { NULL };
 
     object_type = g_type_register_static (GST_TYPE_ELEMENT,
-        "GstMatroskaMux", &object_info, (GTypeFlags) 0);
+        "GstMatroskaMuxH265", &object_info, (GTypeFlags) 0);
 
     g_type_add_interface_static (object_type, GST_TYPE_TAG_SETTER, &iface_info);
     g_type_add_interface_static (object_type, GST_TYPE_TOC_SETTER, &iface_info);
@@ -274,7 +276,7 @@ gst_matroska_mux_get_type (void)
 }
 
 static void
-gst_matroska_mux_class_init (GstMatroskaMuxClass * klass)
+gst_matroska_mux_class_init (GstMatroskaMuxH265Class * klass)
 {
   GObjectClass *gobject_class;
   GstElementClass *gstelement_class;
@@ -433,7 +435,7 @@ gst_matroskamux_pad_init (GstMatroskamuxPad * pad)
  **/
 
 static void
-gst_matroska_mux_init (GstMatroskaMux * mux, gpointer g_class)
+gst_matroska_mux_init (GstMatroskaMuxH265 * mux, gpointer g_class)
 {
   GstPadTemplate *templ;
 
@@ -476,14 +478,14 @@ gst_matroska_mux_init (GstMatroskaMux * mux, gpointer g_class)
 
 /**
  * gst_matroska_mux_finalize:
- * @object: #GstMatroskaMux that should be finalized.
+ * @object: #GstMatroskaMuxH265 that should be finalized.
  *
  * Finalize matroska muxer.
  */
 static void
 gst_matroska_mux_finalize (GObject * object)
 {
-  GstMatroskaMux *mux = GST_MATROSKA_MUX (object);
+  GstMatroskaMuxH265 *mux = GST_MATROSKA_MUX (object);
 
   gst_event_replace (&mux->force_key_unit_event, NULL);
 
@@ -616,14 +618,14 @@ gst_matroska_pad_free (GstPad * collect_pad)
 
 /**
  * gst_matroska_mux_reset:
- * @element: #GstMatroskaMux that should be reseted.
+ * @element: #GstMatroskaMuxH265 that should be reseted.
  *
  * Reset matroska muxer back to initial state.
  */
 static void
 gst_matroska_mux_reset (GstElement * element)
 {
-  GstMatroskaMux *mux = GST_MATROSKA_MUX (element);
+  GstMatroskaMuxH265 *mux = GST_MATROSKA_MUX (element);
   GSList *walk;
 
   /* reset EBML write */
@@ -762,7 +764,7 @@ gst_matroska_mux_handle_sink_event (GstCollectPads * pads,
 {
   GstMatroskaPad *collect_pad;
   GstMatroskaTrackContext *context;
-  GstMatroskaMux *mux;
+  GstMatroskaMuxH265 *mux;
   GstPad *pad;
   GstTagList *list;
   gboolean ret = TRUE;
@@ -911,7 +913,7 @@ gst_matroska_mux_video_pad_setcaps (GstPad * pad, GstCaps * caps)
 {
   GstMatroskaTrackContext *context = NULL;
   GstMatroskaTrackVideoContext *videocontext;
-  GstMatroskaMux *mux;
+  GstMatroskaMuxH265 *mux;
   GstMatroskaPad *collect_pad;
   GstStructure *structure;
   const gchar *mimetype;
@@ -1109,6 +1111,16 @@ skip_details:
         GST_MATROSKA_CODEC_ID_VIDEO_MPEG4_AVC);
     gst_matroska_mux_free_codec_priv (context);
     /* Create avcC header */
+    if (codec_buf != NULL) {
+      context->codec_priv_size = gst_buffer_get_size (codec_buf);
+      context->codec_priv = g_malloc0 (context->codec_priv_size);
+      gst_buffer_extract (codec_buf, 0, context->codec_priv, -1);
+    }
+  } else if (!strcmp (mimetype, "video/x-h265")) {
+    gst_matroska_mux_set_codec_id (context,
+        GST_MATROSKA_CODEC_ID_VIDEO_MPEGH_HEVC);
+    gst_matroska_mux_free_codec_priv (context);
+    /* Create hvcC header */
     if (codec_buf != NULL) {
       context->codec_priv_size = gst_buffer_get_size (codec_buf);
       context->codec_priv = g_malloc0 (context->codec_priv_size);
@@ -1611,7 +1623,7 @@ gst_matroska_mux_audio_pad_setcaps (GstPad * pad, GstCaps * caps)
 {
   GstMatroskaTrackContext *context = NULL;
   GstMatroskaTrackAudioContext *audiocontext;
-  GstMatroskaMux *mux;
+  GstMatroskaMuxH265 *mux;
   GstMatroskaPad *collect_pad;
   const gchar *mimetype;
   gint samplerate = 0, channels = 0;
@@ -1986,7 +1998,7 @@ gst_matroska_mux_subtitle_pad_setcaps (GstPad * pad, GstCaps * caps)
 
   GstMatroskaTrackContext *context = NULL;
   GstMatroskaTrackSubtitleContext *scontext;
-  GstMatroskaMux *mux;
+  GstMatroskaMuxH265 *mux;
   GstMatroskaPad *collect_pad;
   const gchar *mimetype;
   GstStructure *structure;
@@ -2095,7 +2107,7 @@ gst_matroska_mux_request_new_pad (GstElement * element,
     GstPadTemplate * templ, const gchar * req_name, const GstCaps * caps)
 {
   GstElementClass *klass = GST_ELEMENT_GET_CLASS (element);
-  GstMatroskaMux *mux = GST_MATROSKA_MUX (element);
+  GstMatroskaMuxH265 *mux = GST_MATROSKA_MUX (element);
   GstMatroskaPad *collect_pad;
   GstMatroskamuxPad *newpad;
   gchar *name = NULL;
@@ -2200,7 +2212,7 @@ pad_add_failed:
 static void
 gst_matroska_mux_release_pad (GstElement * element, GstPad * pad)
 {
-  GstMatroskaMux *mux;
+  GstMatroskaMuxH265 *mux;
   GSList *walk;
 
   mux = GST_MATROSKA_MUX (GST_PAD_PARENT (pad));
@@ -2241,7 +2253,7 @@ gst_matroska_mux_release_pad (GstElement * element, GstPad * pad)
  * Write a track header.
  */
 static void
-gst_matroska_mux_track_header (GstMatroskaMux * mux,
+gst_matroska_mux_track_header (GstMatroskaMuxH265 * mux,
     GstMatroskaTrackContext * context)
 {
   GstEbmlWrite *ebml = mux->ebml_write;
@@ -2368,7 +2380,7 @@ gst_matroska_mux_write_chapter_title (const gchar * title, GstEbmlWrite * ebml)
 }
 
 static void
-gst_matroska_mux_write_chapter (GstMatroskaMux * mux, GstTocEntry * edition,
+gst_matroska_mux_write_chapter (GstMatroskaMuxH265 * mux, GstTocEntry * edition,
     GstTocEntry * entry, GstEbmlWrite * ebml, guint64 * master_chapters,
     guint64 * master_edition)
 {
@@ -2437,7 +2449,7 @@ gst_matroska_mux_write_chapter (GstMatroskaMux * mux, GstTocEntry * edition,
 }
 
 static void
-gst_matroska_mux_write_chapter_edition (GstMatroskaMux * mux,
+gst_matroska_mux_write_chapter_edition (GstMatroskaMuxH265 * mux,
     GstTocEntry * entry, GstEbmlWrite * ebml, guint64 * master_chapters)
 {
   guint64 master_edition = 0;
@@ -2465,7 +2477,7 @@ gst_matroska_mux_write_chapter_edition (GstMatroskaMux * mux,
  * Start a new matroska file (write headers etc...)
  */
 static void
-gst_matroska_mux_start (GstMatroskaMux * mux)
+gst_matroska_mux_start (GstMatroskaMuxH265 * mux)
 {
   GstEbmlWrite *ebml = mux->ebml_write;
   const gchar *doctype;
@@ -2779,7 +2791,7 @@ gst_matroska_mux_write_simple_tag (const GstTagList * list, const gchar * tag,
 
 #if 0
 static void
-gst_matroska_mux_write_toc_entry_tags (GstMatroskaMux * mux,
+gst_matroska_mux_write_toc_entry_tags (GstMatroskaMuxH265 * mux,
     const GstTocEntry * entry, guint64 * master_tags)
 {
   guint64 master_tag, master_targets;
@@ -2825,7 +2837,7 @@ gst_matroska_mux_write_toc_entry_tags (GstMatroskaMux * mux,
  * Finish a new matroska file (write index etc...)
  */
 static void
-gst_matroska_mux_finish (GstMatroskaMux * mux)
+gst_matroska_mux_finish (GstMatroskaMuxH265 * mux)
 {
   GstEbmlWrite *ebml = mux->ebml_write;
   guint64 pos;
@@ -3092,7 +3104,7 @@ gst_matroska_mux_create_buffer_header (GstMatroskaTrackContext * track,
 #define DIRAC_PARSE_CODE_IS_PICTURE(x) ((x & 0x08) != 0)
 
 static GstBuffer *
-gst_matroska_mux_handle_dirac_packet (GstMatroskaMux * mux,
+gst_matroska_mux_handle_dirac_packet (GstMatroskaMuxH265 * mux,
     GstMatroskaPad * collect_pad, GstBuffer * buf)
 {
   GstMatroskaTrackVideoContext *ctx =
@@ -3166,7 +3178,7 @@ gst_matroska_mux_handle_dirac_packet (GstMatroskaMux * mux,
 }
 
 static void
-gst_matroska_mux_stop_streamheader (GstMatroskaMux * mux)
+gst_matroska_mux_stop_streamheader (GstMatroskaMuxH265 * mux)
 {
   GstCaps *caps;
   GstStructure *s;
@@ -3202,8 +3214,8 @@ gst_matroska_mux_stop_streamheader (GstMatroskaMux * mux)
  * Returns: Result of the gst_pad_push issued to write the data.
  */
 static GstFlowReturn
-gst_matroska_mux_write_data (GstMatroskaMux * mux, GstMatroskaPad * collect_pad,
-    GstBuffer * buf)
+gst_matroska_mux_write_data (GstMatroskaMuxH265 * mux,
+    GstMatroskaPad * collect_pad, GstBuffer * buf)
 {
   GstEbmlWrite *ebml = mux->ebml_write;
   GstBuffer *hdr;
@@ -3418,7 +3430,7 @@ static GstFlowReturn
 gst_matroska_mux_handle_buffer (GstCollectPads * pads, GstCollectData * data,
     GstBuffer * buf, gpointer user_data)
 {
-  GstMatroskaMux *mux = GST_MATROSKA_MUX (user_data);
+  GstMatroskaMuxH265 *mux = GST_MATROSKA_MUX (user_data);
   GstEbmlWrite *ebml = mux->ebml_write;
   GstMatroskaPad *best;
   GstFlowReturn ret = GST_FLOW_OK;
@@ -3503,7 +3515,7 @@ static GstStateChangeReturn
 gst_matroska_mux_change_state (GstElement * element, GstStateChange transition)
 {
   GstStateChangeReturn ret;
-  GstMatroskaMux *mux = GST_MATROSKA_MUX (element);
+  GstMatroskaMuxH265 *mux = GST_MATROSKA_MUX (element);
 
   switch (transition) {
     case GST_STATE_CHANGE_NULL_TO_READY:
@@ -3541,7 +3553,7 @@ static void
 gst_matroska_mux_set_property (GObject * object,
     guint prop_id, const GValue * value, GParamSpec * pspec)
 {
-  GstMatroskaMux *mux;
+  GstMatroskaMuxH265 *mux;
 
   g_return_if_fail (GST_IS_MATROSKA_MUX (object));
   mux = GST_MATROSKA_MUX (object);
@@ -3574,7 +3586,7 @@ static void
 gst_matroska_mux_get_property (GObject * object,
     guint prop_id, GValue * value, GParamSpec * pspec)
 {
-  GstMatroskaMux *mux;
+  GstMatroskaMuxH265 *mux;
 
   g_return_if_fail (GST_IS_MATROSKA_MUX (object));
   mux = GST_MATROSKA_MUX (object);
@@ -3596,4 +3608,18 @@ gst_matroska_mux_get_property (GObject * object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
   }
+}
+
+gboolean
+gst_matroska_mux_plugin_init (GstPlugin * plugin)
+{
+  /* create an elementfactory for the matroska_mux element */
+  if (!gst_element_register (plugin, "matroskamux",
+          GST_RANK_PRIMARY + 1, GST_TYPE_MATROSKA_MUX))
+    return FALSE;
+  if (!gst_element_register (plugin, "matroskamux-libde265",
+          GST_RANK_PRIMARY + 1, GST_TYPE_MATROSKA_MUX))
+    return FALSE;
+
+  return TRUE;
 }
