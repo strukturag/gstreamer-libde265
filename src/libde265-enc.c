@@ -124,6 +124,10 @@ _gst_libde265_enc_free_encoder (GstLibde265Enc * enc)
     gst_buffer_unref (enc->output_buffer);
     enc->output_buffer = NULL;
   }
+  if (enc->nal_header_memory != NULL) {
+    gst_memory_unref (enc->nal_header_memory);
+    enc->nal_header_memory = NULL;
+  }
 }
 
 static inline gboolean
@@ -133,6 +137,15 @@ _gst_libde265_enc_reset_encoder (GstLibde265Enc * enc)
   enc->codec_data = gst_buffer_new ();
   if (enc->codec_data == NULL) {
     return FALSE;
+  }
+
+  if (enc->nal_header_memory == NULL) {
+    enc->nal_header_memory =
+        gst_memory_new_wrapped (GST_MEMORY_FLAG_READONLY, NAL_HEADER,
+        sizeof (NAL_HEADER), 0, sizeof (NAL_HEADER), NULL, NULL);
+    if (enc->nal_header_memory == NULL) {
+      return FALSE;
+    }
   }
 
   return TRUE;
@@ -146,6 +159,7 @@ gst_libde265_enc_init (GstLibde265Enc * encoder)
   enc->ctx = NULL;
   enc->codec_data = NULL;
   enc->output_buffer = NULL;
+  enc->nal_header_memory = NULL;
 }
 
 static void
@@ -227,7 +241,7 @@ _gst_libde265_enc_plugin_release_packet (void *user_data)
 {
   struct en265_packet *packet = (struct en265_packet *) user_data;
 
-  //en265_free_packet(enc->ctx, packet);
+  //en265_free_packet(packet->encoder_context, packet);
 }
 
 static GstFlowReturn
@@ -255,14 +269,8 @@ _gst_libde265_enc_return_packets (VIDEO_ENCODER_BASE * encoder,
     if (enc->codec_data != NULL) {
       if (packet->content_type < EN265_PACKET_SLICE) {
         /* Generate codec data. */
-        mem =
-            gst_memory_new_wrapped (GST_MEMORY_FLAG_READONLY, NAL_HEADER,
-            sizeof (NAL_HEADER), 0, sizeof (NAL_HEADER), NULL, NULL);
-        if (mem == NULL) {
-          en265_free_packet (enc->ctx, packet);
-          return GST_FLOW_ERROR;
-        }
-        gst_buffer_append_memory (enc->codec_data, mem);
+        gst_buffer_append_memory (enc->codec_data,
+            gst_memory_ref (enc->nal_header_memory));
 
         mem =
             gst_memory_new_wrapped (GST_MEMORY_FLAG_READONLY,
@@ -297,14 +305,8 @@ _gst_libde265_enc_return_packets (VIDEO_ENCODER_BASE * encoder,
       }
     }
 
-    mem =
-        gst_memory_new_wrapped (GST_MEMORY_FLAG_READONLY, NAL_HEADER,
-        sizeof (NAL_HEADER), 0, sizeof (NAL_HEADER), NULL, NULL);
-    if (mem == NULL) {
-      GST_ERROR_OBJECT (encoder, "Failed to wrap memory for NAL header");
-      return GST_FLOW_ERROR;
-    }
-    gst_buffer_append_memory (enc->output_buffer, mem);
+    gst_buffer_append_memory (enc->output_buffer,
+        gst_memory_ref (enc->nal_header_memory));
 
     mem =
         gst_memory_new_wrapped (GST_MEMORY_FLAG_READONLY,

@@ -81,6 +81,7 @@ typedef struct _GstLibde265Enc {
     const VIDEO_STATE       *output_state;
     GstBuffer               *codec_data;
     GstBuffer               *output_buffer;
+    GstMemory               *nal_header_memory;
 } GstLibde265Enc;
 
 typedef struct _GstLibde265EncClass {
