@@ -319,12 +319,10 @@ gst_libde265_dec_get_buffer (de265_decoder_context * ctx,
   GST_VIDEO_CODEC_FRAME_FLAG_UNSET (frame,
       GST_VIDEO_CODEC_FRAME_FLAG_DECODE_ONLY);
 
-  int width = spec->width;
+  int width =
+      (spec->width + spec->alignment - 1) / spec->alignment * spec->alignment;
   int height = spec->height;
 
-  if (width % spec->alignment) {
-    width += spec->alignment - (width % spec->alignment);
-  }
   if (width != spec->visible_width || height != spec->visible_height) {
     // clipping not supported for now
     goto fallback;
