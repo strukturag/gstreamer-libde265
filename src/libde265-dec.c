@@ -280,24 +280,6 @@ gst_libde265_dec_get_property (GObject * object, guint prop_id,
   }
 }
 
-static inline enum de265_chroma
-_gst_libde265_image_format_to_chroma (enum de265_image_format format)
-{
-  switch (format) {
-    case de265_image_format_mono8:
-      return de265_chroma_mono;
-    case de265_image_format_YUV420P8:
-      return de265_chroma_420;
-    case de265_image_format_YUV422P8:
-      return de265_chroma_422;
-    case de265_image_format_YUV444P8:
-      return de265_chroma_444;
-    default:
-      g_assert (0);
-      return 0;
-  }
-}
-
 static inline GstVideoFormat
 _gst_libde265_get_video_format (enum de265_chroma chroma, int bits_per_pixel)
 {
@@ -404,6 +386,24 @@ struct GstLibde265FrameRef
   GstBuffer *buffer;
   int mapped;
 };
+
+static inline enum de265_chroma
+_gst_libde265_image_format_to_chroma (enum de265_image_format format)
+{
+  switch (format) {
+    case de265_image_format_mono8:
+      return de265_chroma_mono;
+    case de265_image_format_YUV420P8:
+      return de265_chroma_420;
+    case de265_image_format_YUV422P8:
+      return de265_chroma_422;
+    case de265_image_format_YUV444P8:
+      return de265_chroma_444;
+    default:
+      g_assert (0);
+      return 0;
+  }
+}
 
 static void
 gst_libde265_dec_release_frame_ref (struct GstLibde265FrameRef *ref)
