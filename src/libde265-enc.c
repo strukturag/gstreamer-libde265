@@ -128,6 +128,14 @@ _gst_libde265_enc_free_encoder (GstLibde265Enc * enc)
     gst_memory_unref (enc->nal_header_memory);
     enc->nal_header_memory = NULL;
   }
+  if (enc->output_state != NULL) {
+    gst_video_codec_state_unref (enc->output_state);
+    enc->output_state = NULL;
+  }
+  if (enc->input_state != NULL) {
+    gst_video_codec_state_unref (enc->input_state);
+    enc->input_state = NULL;
+  }
 }
 
 static inline gboolean
@@ -160,6 +168,8 @@ gst_libde265_enc_init (GstLibde265Enc * encoder)
   enc->codec_data = NULL;
   enc->output_buffer = NULL;
   enc->nal_header_memory = NULL;
+  enc->output_state = NULL;
+  enc->input_state = NULL;
 }
 
 static void
@@ -170,6 +180,29 @@ gst_libde265_enc_finalize (GObject * object)
   _gst_libde265_enc_free_encoder (enc);
 
   G_OBJECT_CLASS (parent_class)->finalize (object);
+}
+
+static void
+_gst_libde265_enc_release_image (en265_encoder_context * ctx,
+    struct de265_image *image, void *user_data)
+{
+  int i;
+  GstVideoFrame *vframe = NULL;
+
+  for (i = 0; i < 3; i++) {
+    GstVideoFrame *tmpframe = de265_get_image_plane_user_data (image, i);
+    if (tmpframe != NULL) {
+      // memory was passed directly from input image
+      vframe = tmpframe;
+    } else {
+      de265_free_image_plane (image, i);
+    }
+  }
+
+  if (vframe != NULL) {
+    gst_video_frame_unmap (vframe);
+    g_free (vframe);
+  }
 }
 
 static gboolean
@@ -188,7 +221,10 @@ gst_libde265_enc_start (VIDEO_ENCODER_BASE * encoder)
     return FALSE;
   }
 
-  en265_show_params (enc->ctx);
+  en265_set_image_release_function (enc->ctx, _gst_libde265_enc_release_image,
+      encoder);
+
+  en265_show_parameters (enc->ctx);
   return TRUE;
 }
 
@@ -230,6 +266,9 @@ gst_libde265_enc_set_format (VIDEO_ENCODER_BASE * encoder, VIDEO_STATE * state)
       "stream-format", G_TYPE_STRING, "hvc1",
       "alignment", G_TYPE_STRING, "au", NULL);
 
+  if (enc->output_state != NULL) {
+    gst_video_codec_state_unref (enc->output_state);
+  }
   enc->output_state =
       gst_video_encoder_set_output_state (encoder, out_caps, state);
 
@@ -241,7 +280,7 @@ _gst_libde265_enc_plugin_release_packet (void *user_data)
 {
   struct en265_packet *packet = (struct en265_packet *) user_data;
 
-  //en265_free_packet(packet->encoder_context, packet);
+  en265_free_packet (packet->encoder_context, packet);
 }
 
 static GstFlowReturn
@@ -362,7 +401,8 @@ gst_libde265_enc_handle_frame (VIDEO_ENCODER_BASE * encoder,
   int height;
   int i;
   GstClockTime pts;
-  GstVideoFrame vframe;
+  GstVideoFrame *vframe;
+  gboolean unmap_frame = TRUE;
 
 #if GST_CHECK_VERSION(1,0,0)
   width = enc->input_state->info.width;
@@ -379,22 +419,31 @@ gst_libde265_enc_handle_frame (VIDEO_ENCODER_BASE * encoder,
       en265_allocate_image (enc->ctx, width, height, de265_chroma_420,
       (de265_PTS) pts, (void *) (uintptr_t) (frame->system_frame_number + 1));
 
-  if (!gst_video_frame_map (&vframe, &enc->input_state->info,
+  vframe = g_malloc (sizeof (GstVideoFrame));
+  g_assert (vframe != NULL);
+  if (!gst_video_frame_map (vframe, &enc->input_state->info,
           frame->input_buffer, GST_MAP_READ)) {
+    g_free (vframe);
     GST_ERROR_OBJECT (enc, "Failed to map frame input buffer");
     goto error;
   }
 
-  /* TODO(fancycode): store input memory directly in image. */
   for (i = 0; i < 3; i++) {
-    int stride = GST_VIDEO_FRAME_PLANE_STRIDE (&vframe, i);
-    uint8_t *data = GST_VIDEO_FRAME_PLANE_DATA (&vframe, i);
-    uint8_t *tmpdata =
-        (uint8_t *) malloc (stride * GST_VIDEO_FRAME_COMP_HEIGHT (&vframe, i));
-    memcpy (tmpdata, data, stride * GST_VIDEO_FRAME_COMP_HEIGHT (&vframe, i));
-    de265_set_image_plane (image, i, tmpdata, stride, NULL);
+    int stride = GST_VIDEO_FRAME_PLANE_STRIDE (vframe, i);
+    uint8_t *data = GST_VIDEO_FRAME_PLANE_DATA (vframe, i);
+    if ((uintptr_t) (data) % enc->spec.alignment
+        || stride % enc->spec.alignment) {
+      // memory block or stride doesn't match alignment request
+      de265_alloc_image_plane (image, i, data, stride, NULL);
+    } else {
+      unmap_frame = FALSE;
+      de265_set_image_plane (image, i, data, stride, vframe);
+    }
   }
-  gst_video_frame_unmap (&vframe);
+  if (unmap_frame) {
+    gst_video_frame_unmap (vframe);
+    g_free (vframe);
+  }
 
   en265_push_image (enc->ctx, image);
 
