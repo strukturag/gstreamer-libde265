@@ -30,6 +30,11 @@
 #error "You need libde265 0.7 or newer to compile this plugin."
 #endif
 
+#if LIBDE265_NUMERIC_VERSION < 0x01000000
+// libde265 < 1.0 only supported 8 bits per pixel
+#define de265_get_bits_per_pixel(image, plane) 8
+#endif
+
 // use two decoder threads if no information about
 // available CPU cores can be retrieved
 #define DEFAULT_THREAD_COUNT        2
@@ -113,7 +118,7 @@ static gboolean gst_libde265_dec_reset (VIDEO_DECODER_BASE * parse);
 static GstFlowReturn gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse,
     VIDEO_FRAME * frame);
 static GstFlowReturn _gst_libde265_image_available (VIDEO_DECODER_BASE * parse,
-    int width, int height);
+    int width, int height, GstVideoFormat format);
 
 static void
 gst_libde265_dec_class_init (GstLibde265DecClass * klass)
@@ -275,6 +280,117 @@ gst_libde265_dec_get_property (GObject * object, guint prop_id,
   }
 }
 
+static inline enum de265_chroma
+_gst_libde265_image_format_to_chroma (enum de265_image_format format)
+{
+  switch (format) {
+    case de265_image_format_mono8:
+      return de265_chroma_mono;
+    case de265_image_format_YUV420P8:
+      return de265_chroma_420;
+    case de265_image_format_YUV422P8:
+      return de265_chroma_422;
+    case de265_image_format_YUV444P8:
+      return de265_chroma_444;
+    default:
+      g_assert (0);
+      return 0;
+  }
+}
+
+static inline GstVideoFormat
+_gst_libde265_get_video_format (enum de265_chroma chroma, int bits_per_pixel)
+{
+  GstVideoFormat result = GST_VIDEO_FORMAT_UNKNOWN;
+  switch (chroma) {
+    case de265_chroma_mono:
+      result = GST_VIDEO_FORMAT_GRAY8;
+      break;
+    case de265_chroma_420:
+#if GST_CHECK_VERSION(1,0,0)
+      switch (bits_per_pixel) {
+        case 8:
+          result = GST_VIDEO_FORMAT_I420;
+          break;
+        case 9:
+          result = GST_VIDEO_FORMAT_I420_10LE;
+          break;
+        case 10:
+          result = GST_VIDEO_FORMAT_I420_10LE;
+          break;
+        default:
+          if (bits_per_pixel > 10 && bits_per_pixel <= 16) {
+            result = GST_VIDEO_FORMAT_I420_10LE;
+          } else {
+            GST_DEBUG
+                ("Unsupported output colorspace %d with %d bits per pixel",
+                chroma, bits_per_pixel);
+          }
+          break;
+      }
+#else
+      result = GST_VIDEO_FORMAT_I420;
+#endif
+      break;
+    case de265_chroma_422:
+#if GST_CHECK_VERSION(1,0,0)
+      switch (bits_per_pixel) {
+        case 8:
+          result = GST_VIDEO_FORMAT_Y42B;
+          break;
+        case 9:
+          result = GST_VIDEO_FORMAT_I422_10LE;
+          break;
+        case 10:
+          result = GST_VIDEO_FORMAT_I422_10LE;
+          break;
+        default:
+          if (bits_per_pixel > 10 && bits_per_pixel <= 16) {
+            result = GST_VIDEO_FORMAT_I422_10LE;
+          } else {
+            GST_DEBUG
+                ("Unsupported output colorspace %d with %d bits per pixel",
+                chroma, bits_per_pixel);
+          }
+          break;
+      }
+#else
+      result = GST_VIDEO_FORMAT_Y42B;
+#endif
+      break;
+    case de265_chroma_444:
+#if GST_CHECK_VERSION(1,0,0)
+      switch (bits_per_pixel) {
+        case 8:
+          result = GST_VIDEO_FORMAT_Y444;
+          break;
+        case 9:
+          result = GST_VIDEO_FORMAT_Y444_10LE;
+          break;
+        case 10:
+          result = GST_VIDEO_FORMAT_Y444_10LE;
+          break;
+        default:
+          if (bits_per_pixel > 10 && bits_per_pixel <= 16) {
+            result = GST_VIDEO_FORMAT_Y444_10LE;
+          } else {
+            GST_DEBUG
+                ("Unsupported output colorspace %d with %d bits per pixel",
+                chroma, bits_per_pixel);
+          }
+          break;
+      }
+#else
+      result = GST_VIDEO_FORMAT_Y444;
+#endif
+      break;
+    default:
+      GST_DEBUG ("Unsupported output colorspace %d", chroma);
+      break;
+  }
+  return result;
+}
+
 /*
  * Direct rendering code needs GStreamer 1.0
  * to have support for refcounted frames.
@@ -328,7 +444,34 @@ gst_libde265_dec_get_buffer (de265_decoder_context * ctx,
     goto fallback;
   }
 
-  GstFlowReturn ret = _gst_libde265_image_available (base, width, height);
+  if (de265_get_bits_per_pixel (img, 0) != de265_get_bits_per_pixel (img, 1) ||
+      de265_get_bits_per_pixel (img, 0) != de265_get_bits_per_pixel (img, 2) ||
+      de265_get_bits_per_pixel (img, 1) != de265_get_bits_per_pixel (img, 2)) {
+    GST_DEBUG_OBJECT (dec,
+        "input format has multiple bits per pixel (%d/%d/%d)",
+        de265_get_bits_per_pixel (img, 0), de265_get_bits_per_pixel (img, 1),
+        de265_get_bits_per_pixel (img, 2));
+    goto fallback;
+  }
+
+  int bits_per_pixel = de265_get_bits_per_pixel (img, 0);
+  GstVideoFormat format =
+      _gst_libde265_get_video_format (_gst_libde265_image_format_to_chroma
+      (spec->format), bits_per_pixel);
+  if (format == GST_VIDEO_FORMAT_UNKNOWN) {
+    goto fallback;
+  }
+
+  const GstVideoFormatInfo *format_info = gst_video_format_get_info (format);
+  if (GST_VIDEO_FORMAT_INFO_BITS (format_info) != bits_per_pixel) {
+    GST_DEBUG_OBJECT (dec,
+        "output format doesn't provide enough bits per pixel (%d/%d)",
+        GST_VIDEO_FORMAT_INFO_BITS (format_info), bits_per_pixel);
+    goto fallback;
+  }
+
+  GstFlowReturn ret = _gst_libde265_image_available (base, width, height,
+      format);
   if (G_UNLIKELY (ret != GST_FLOW_OK)) {
     GST_ERROR_OBJECT (dec, "Failed to notify about available image");
     goto fallback;
@@ -529,14 +672,14 @@ gst_libde265_dec_reset (VIDEO_DECODER_BASE * parse)
 
 static GstFlowReturn
 _gst_libde265_image_available (VIDEO_DECODER_BASE * parse,
-    int width, int height)
+    int width, int height, GstVideoFormat format)
 {
   GstLibde265Dec *dec = GST_LIBDE265_DEC (parse);
 
   if (G_UNLIKELY (width != dec->width || height != dec->height)) {
 #if GST_CHECK_VERSION(1,0,0)
     GstVideoCodecState *state =
-        gst_video_decoder_set_output_state (parse, GST_VIDEO_FORMAT_I420, width,
+        gst_video_decoder_set_output_state (parse, format, width,
         height, dec->input_state);
     g_assert (state != NULL);
     if (dec->fps_n > 0) {
@@ -558,7 +701,7 @@ _gst_libde265_image_available (VIDEO_DECODER_BASE * parse,
 #else
     GstVideoState *state = gst_base_video_decoder_get_state (parse);
     g_assert (state != NULL);
-    state->format = GST_VIDEO_FORMAT_I420;
+    state->format = format;
     state->width = width;
     state->height = height;
     if (dec->fps_n > 0) {
@@ -864,9 +1007,21 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
       GST_VIDEO_CODEC_FRAME_FLAG_DECODE_ONLY);
 #endif
 
+  int bits_per_pixel = MAX (MAX (de265_get_bits_per_pixel (img, 0),
+          de265_get_bits_per_pixel (img, 1)), de265_get_bits_per_pixel (img,
+          2));
+
+  GstVideoFormat format =
+      _gst_libde265_get_video_format (de265_get_chroma_format (img),
+      bits_per_pixel);
+  if (format == GST_VIDEO_FORMAT_UNKNOWN) {
+    GST_ERROR_OBJECT (dec, "Unsupported image format");
+    return GST_FLOW_ERROR;
+  }
+
   GstFlowReturn result =
       _gst_libde265_image_available (parse, de265_get_image_width (img, 0),
-      de265_get_image_height (img, 0));
+      de265_get_image_height (img, 0), format);
   if (result != GST_FLOW_OK) {
     GST_ERROR_OBJECT (dec, "Failed to notify about available image");
     return result;
@@ -890,20 +1045,97 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
   dest = GST_BUFFER_DATA (frame->src_buffer);
 #endif
 
+#if GST_CHECK_VERSION(1,0,0)
+  const GstVideoFormatInfo *format_info = gst_video_format_get_info (format);
+  int max_bits_per_pixel = GST_VIDEO_FORMAT_INFO_BITS (format_info);
+#else
+  int max_bits_per_pixel = 8;
+#endif
+
   int plane;
   for (plane = 0; plane < 3; plane++) {
     int stride;
+    int pos;
     int width = de265_get_image_width (img, plane);
     int height = de265_get_image_height (img, plane);
     const uint8_t *src = de265_get_image_plane (img, plane, &stride);
-    if (stride == width) {
-      memcpy (dest, src, height * stride);
-      dest += (height * stride);
-    } else {
+    int dst_stride = width * ((max_bits_per_pixel + 7) / 8);
+    int plane_bits_per_pixel = de265_get_bits_per_pixel (img, plane);
+    if (plane_bits_per_pixel > max_bits_per_pixel && max_bits_per_pixel > 8) {
+      // More bits per pixel in this plane than supported by the output format
+      int shift = (plane_bits_per_pixel - max_bits_per_pixel);
+      int size = MIN (stride, dst_stride);
       while (height--) {
-        memcpy (dest, src, width);
+        uint16_t *s = (uint16_t *) src;
+        uint16_t *d = (uint16_t *) dest;
+        for (pos = 0; pos < size / 2; pos++) {
+          *d = *s >> shift;
+          d++;
+          s++;
+        }
         src += stride;
-        dest += width;
+        dest += dst_stride;
+      }
+    } else if (plane_bits_per_pixel > max_bits_per_pixel
+        && max_bits_per_pixel == 8) {
+      // More bits per pixel in this plane than supported by the output format
+      int shift = (plane_bits_per_pixel - max_bits_per_pixel);
+      int size = MIN (stride, dst_stride);
+      while (height--) {
+        uint16_t *s = (uint16_t *) src;
+        uint8_t *d = (uint8_t *) dest;
+        for (pos = 0; pos < size; pos++) {
+          *d = *s >> shift;
+          d++;
+          s++;
+        }
+        src += stride;
+        dest += dst_stride;
+      }
+    } else if (plane_bits_per_pixel < max_bits_per_pixel
+        && plane_bits_per_pixel > 8) {
+      // Less bits per pixel in this plane than the rest of the picture
+      // but more than 8bpp.
+      int shift = (plane_bits_per_pixel - max_bits_per_pixel);
+      int size = MIN (stride, dst_stride);
+      while (height--) {
+        uint16_t *s = (uint16_t *) src;
+        uint16_t *d = (uint16_t *) dest;
+        for (pos = 0; pos < size / 2; pos++) {
+          *d = *s >> shift;
+          d++;
+          s++;
+        }
+        src += stride;
+        dest += dst_stride;
+      }
+    } else if (plane_bits_per_pixel < max_bits_per_pixel
+        && plane_bits_per_pixel == 8) {
+      // 8 bits per pixel in this plane, which is less than the rest of the picture.
+      int shift = (max_bits_per_pixel - plane_bits_per_pixel);
+      int size = MIN (stride, dst_stride);
+      while (height--) {
+        uint8_t *s = (uint8_t *) src;
+        uint16_t *d = (uint16_t *) dest;
+        for (pos = 0; pos < size; pos++) {
+          *d = *s << shift;
+          d++;
+          s++;
+        }
+        src += stride;
+        dest += dst_stride;
+      }
+    } else {
+      // Bits per pixel of image match output format.
+      if (stride == width) {
+        memcpy (dest, src, height * stride);
+        dest += (height * stride);
+      } else {
+        while (height--) {
+          memcpy (dest, src, width);
+          src += stride;
+          dest += width;
+        }
       }
     }
   }
