@@ -444,20 +444,25 @@ gst_libde265_dec_get_buffer (de265_decoder_context * ctx,
     goto fallback;
   }
 
-  if (de265_get_bits_per_pixel (img, 0) != de265_get_bits_per_pixel (img, 1) ||
-      de265_get_bits_per_pixel (img, 0) != de265_get_bits_per_pixel (img, 2) ||
-      de265_get_bits_per_pixel (img, 1) != de265_get_bits_per_pixel (img, 2)) {
-    GST_DEBUG_OBJECT (dec,
-        "input format has multiple bits per pixel (%d/%d/%d)",
-        de265_get_bits_per_pixel (img, 0), de265_get_bits_per_pixel (img, 1),
-        de265_get_bits_per_pixel (img, 2));
-    goto fallback;
+  enum de265_chroma chroma =
+      _gst_libde265_image_format_to_chroma (spec->format);
+  if (chroma != de265_chroma_mono) {
+    if (de265_get_bits_per_pixel (img, 0) != de265_get_bits_per_pixel (img, 1)
+        || de265_get_bits_per_pixel (img, 0) != de265_get_bits_per_pixel (img,
+            2)
+        || de265_get_bits_per_pixel (img, 1) != de265_get_bits_per_pixel (img,
+            2)) {
+      GST_DEBUG_OBJECT (dec,
+          "input format has multiple bits per pixel (%d/%d/%d)",
+          de265_get_bits_per_pixel (img, 0), de265_get_bits_per_pixel (img, 1),
+          de265_get_bits_per_pixel (img, 2));
+      goto fallback;
+    }
   }
 
   int bits_per_pixel = de265_get_bits_per_pixel (img, 0);
   GstVideoFormat format =
-      _gst_libde265_get_video_format (_gst_libde265_image_format_to_chroma
-      (spec->format), bits_per_pixel);
+      _gst_libde265_get_video_format (chroma, bits_per_pixel);
   if (format == GST_VIDEO_FORMAT_UNKNOWN) {
     goto fallback;
   }
