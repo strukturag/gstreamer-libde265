@@ -30,9 +30,29 @@
 #error "You need libde265 0.7 or newer to compile this plugin."
 #endif
 
-#if LIBDE265_NUMERIC_VERSION < 0x01000000
+#if !defined(LIBDE265_ENCODED_VERSION)
+#define LIBDE265_ENCODED_VERSION(h, m, l) ((h) << 24 | (m) << 16 | (l) << 8)
+#endif
+#if !defined(LIBDE265_CHECK_VERSION)
+#define LIBDE265_CHECK_VERSION(h, m, l) (LIBDE265_NUMERIC_VERSION >= LIBDE265_ENCODED_VERSION(h, m, l))
+#endif
+
+#if !LIBDE265_CHECK_VERSION(1,0,0)
 // libde265 < 1.0 only supported 8 bits per pixel
 #define de265_get_bits_per_pixel(image, plane) 8
+#endif
+
+#if !LIBDE265_CHECK_VERSION(2,0,0)
+// "de265_flush_data" got renamed in 2.0.0
+#define de265_push_end_of_stream de265_flush_data
+
+#define GET_IMAGE_BITS_PER_PIXEL(img, spec, channel) \
+    de265_get_bits_per_pixel(img, channel)
+#define RELEASE_PICTURE(img)
+#else
+#define GET_IMAGE_BITS_PER_PIXEL(img, spec, channel) \
+    de265_get_bits_per_pixel_from_spec(spec, channel)
+#define RELEASE_PICTURE(img) de265_release_picture(img)
 #endif
 
 // use two decoder threads if no information about
@@ -387,6 +407,7 @@ struct GstLibde265FrameRef
   int mapped;
 };
 
+#if !LIBDE265_CHECK_VERSION(2,0,0)
 static inline enum de265_chroma
 _gst_libde265_image_format_to_chroma (enum de265_image_format format)
 {
@@ -404,6 +425,7 @@ _gst_libde265_image_format_to_chroma (enum de265_image_format format)
       return 0;
   }
 }
+#endif
 
 static void
 gst_libde265_dec_release_frame_ref (struct GstLibde265FrameRef *ref)
@@ -417,8 +439,13 @@ gst_libde265_dec_release_frame_ref (struct GstLibde265FrameRef *ref)
 }
 
 static int
+#if !LIBDE265_CHECK_VERSION(2,0,0)
 gst_libde265_dec_get_buffer (de265_decoder_context * ctx,
     struct de265_image_spec *spec, struct de265_image *img, void *userdata)
+#else
+gst_libde265_dec_get_buffer (struct de265_image_intern *img,
+    const struct de265_image_spec *spec, void *userdata)
+#endif
 {
   VIDEO_DECODER_BASE *base = (VIDEO_DECODER_BASE *) userdata;
   GstLibde265Dec *dec = GST_LIBDE265_DEC (base);
@@ -445,22 +472,28 @@ gst_libde265_dec_get_buffer (de265_decoder_context * ctx,
   }
 
   enum de265_chroma chroma =
+#if !LIBDE265_CHECK_VERSION(2,0,0)
       _gst_libde265_image_format_to_chroma (spec->format);
+#else
+      spec->chroma;
+#endif
   if (chroma != de265_chroma_mono) {
-    if (de265_get_bits_per_pixel (img, 0) != de265_get_bits_per_pixel (img, 1)
-        || de265_get_bits_per_pixel (img, 0) != de265_get_bits_per_pixel (img,
-            2)
-        || de265_get_bits_per_pixel (img, 1) != de265_get_bits_per_pixel (img,
-            2)) {
+    if (GET_IMAGE_BITS_PER_PIXEL (img, spec,
+            0) != GET_IMAGE_BITS_PER_PIXEL (img, spec, 1)
+        || GET_IMAGE_BITS_PER_PIXEL (img, spec,
+            0) != GET_IMAGE_BITS_PER_PIXEL (img, spec, 2)
+        || GET_IMAGE_BITS_PER_PIXEL (img, spec,
+            1) != GET_IMAGE_BITS_PER_PIXEL (img, spec, 2)) {
       GST_DEBUG_OBJECT (dec,
           "input format has multiple bits per pixel (%d/%d/%d)",
-          de265_get_bits_per_pixel (img, 0), de265_get_bits_per_pixel (img, 1),
-          de265_get_bits_per_pixel (img, 2));
+          GET_IMAGE_BITS_PER_PIXEL (img, spec, 0),
+          GET_IMAGE_BITS_PER_PIXEL (img, spec, 1),
+          GET_IMAGE_BITS_PER_PIXEL (img, spec, 2));
       goto fallback;
     }
   }
 
-  int bits_per_pixel = de265_get_bits_per_pixel (img, 0);
+  int bits_per_pixel = GET_IMAGE_BITS_PER_PIXEL (img, spec, 0);
   GstVideoFormat format =
       _gst_libde265_get_video_format (chroma, bits_per_pixel);
   if (format == GST_VIDEO_FORMAT_UNKNOWN) {
@@ -531,8 +564,11 @@ gst_libde265_dec_get_buffer (de265_decoder_context * ctx,
       GST_DEBUG_OBJECT (dec, "plane %d not aligned", i);
       goto error;
     }
-
+#if !LIBDE265_CHECK_VERSION(2,0,0)
     de265_set_image_plane (img, i, data, stride, ref);
+#else
+    de265_set_image_plane_intern (img, i, data, stride, ref);
+#endif
   }
   return 1;
 
@@ -540,20 +576,36 @@ error:
   gst_libde265_dec_release_frame_ref (ref);
 
 fallback:
+#if !LIBDE265_CHECK_VERSION(2,0,0)
   return de265_get_default_image_allocation_functions ()->get_buffer (ctx,
       spec, img, userdata);
+#else
+  return de265_get_default_image_allocation_functions ()->get_buffer (img,
+      spec, userdata);
+#endif
 }
 
 static void
+#if !LIBDE265_CHECK_VERSION(2,0,0)
 gst_libde265_dec_release_buffer (de265_decoder_context * ctx,
     struct de265_image *img, void *userdata)
+#else
+gst_libde265_dec_release_buffer (struct de265_image_intern *img, void *userdata)
+#endif
 {
   VIDEO_DECODER_BASE *base = (VIDEO_DECODER_BASE *) userdata;
-  struct GstLibde265FrameRef *ref =
-      (struct GstLibde265FrameRef *) de265_get_image_plane_user_data (img, 0);
+  struct GstLibde265FrameRef *ref = (struct GstLibde265FrameRef *)
+#if !LIBDE265_CHECK_VERSION(2,0,0)
+      de265_get_image_plane_user_data (img, 0);
+#else
+      de265_get_image_plane_user_data_intern (img, 0);
+#endif
   if (ref == NULL) {
-    de265_get_default_image_allocation_functions ()->release_buffer (ctx, img,
-        userdata);
+    de265_get_default_image_allocation_functions ()->release_buffer (
+#if !LIBDE265_CHECK_VERSION(2,0,0)
+        ctx,
+#endif
+        img, userdata);
     return;
   }
   gst_libde265_dec_release_frame_ref (ref);
@@ -572,6 +624,9 @@ gst_libde265_dec_start (VIDEO_DECODER_BASE * parse)
   if (dec->ctx == NULL) {
     return FALSE;
   }
+#if LIBDE265_CHECK_VERSION(2,0,0)
+  de265_set_CPU_capabilities (dec->ctx, de265_cpu_capability_all);
+#endif
 
   if (threads == 0) {
 #if defined(_SC_NPROC_ONLN)
@@ -585,17 +640,27 @@ gst_libde265_dec_start (VIDEO_DECODER_BASE * parse)
     if (threads <= 0) {
       threads = DEFAULT_THREAD_COUNT;
     }
+#if !LIBDE265_CHECK_VERSION(2,0,0)
     // XXX: We start more threads than cores for now, as some threads
     // might get blocked while waiting for dependent data. Having more
     // threads increases decoding speed by about 10%
     threads *= 2;
+#endif
   }
+#if LIBDE265_CHECK_VERSION(2,0,0)
+  de265_set_max_decode_frames_parallel (dec->ctx, threads > 1 ? threads : 1);
+#endif
   if (threads > 1) {
     if (threads > 32) {
       // TODO: this limit should come from the libde265 headers
       threads = 32;
     }
     de265_start_worker_threads (dec->ctx, threads);
+#if LIBDE265_CHECK_VERSION(2,0,0)
+  } else {
+    // Make sure to start at least one processing thread.
+    de265_start_worker_threads (dec->ctx, 1);
+#endif
   }
   GST_INFO ("Using libde265 %s with %d worker threads", de265_get_version (),
       threads);
@@ -604,11 +669,21 @@ gst_libde265_dec_start (VIDEO_DECODER_BASE * parse)
   struct de265_image_allocation allocation;
   allocation.get_buffer = gst_libde265_dec_get_buffer;
   allocation.release_buffer = gst_libde265_dec_release_buffer;
+#if LIBDE265_CHECK_VERSION(2,0,0)
+  allocation.allocation_userdata = parse;
+  de265_set_image_allocation_functions (dec->ctx, &allocation);
+#else
   de265_set_image_allocation_functions (dec->ctx, &allocation, parse);
 #endif
+#endif
+
+#if !LIBDE265_CHECK_VERSION(2,0,0)
   // NOTE: we explicitly disable hash checks for now
   de265_set_parameter_bool (dec->ctx, DE265_DECODER_PARAM_BOOL_SEI_CHECK_HASH,
       0);
+#else
+  de265_suppress_faulty_pictures (dec->ctx, 0);
+#endif
   return TRUE;
 }
 
@@ -638,7 +713,9 @@ gst_libde265_dec_reset (VIDEO_DECODER_BASE * parse)
   de265_reset (dec->ctx);
   dec->buffer_full = 0;
   if (dec->codec_data != NULL && dec->mode == GST_TYPE_LIBDE265_DEC_RAW) {
+#if !LIBDE265_CHECK_VERSION(2,0,0)
     int more;
+#endif
     de265_error err =
         de265_push_data (dec->ctx, dec->codec_data, dec->codec_data_size, 0,
         NULL);
@@ -649,6 +726,7 @@ gst_libde265_dec_reset (VIDEO_DECODER_BASE * parse)
       return FALSE;
     }
     de265_push_end_of_NAL (dec->ctx);
+#if !LIBDE265_CHECK_VERSION(2,0,0)
     do {
       err = de265_decode (dec->ctx, &more);
       switch (err) {
@@ -670,6 +748,7 @@ gst_libde265_dec_reset (VIDEO_DECODER_BASE * parse)
           }
       }
     } while (more);
+#endif
   }
 
   return TRUE;
@@ -756,7 +835,9 @@ gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse, VIDEO_STATE * state)
       gsize size;
       GstBuffer *buf;
       de265_error err;
+#if !LIBDE265_CHECK_VERSION(2,0,0)
       int more;
+#endif
 
       buf = gst_value_get_buffer (value);
 #if GST_CHECK_VERSION(1,0,0)
@@ -846,6 +927,7 @@ gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse, VIDEO_STATE * state)
       gst_buffer_unmap (buf, &info);
 #endif
       de265_push_end_of_NAL (dec->ctx);
+#if !LIBDE265_CHECK_VERSION(2,0,0)
       do {
         err = de265_decode (dec->ctx, &more);
         switch (err) {
@@ -867,6 +949,7 @@ gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse, VIDEO_STATE * state)
             }
         }
       } while (more);
+#endif
     } else if ((value = gst_structure_get_value (str, "stream-format"))) {
       const gchar *str = g_value_get_string (value);
       if (strcmp (str, "byte-stream") == 0) {
@@ -887,7 +970,9 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
   uint8_t *end_data;
   const struct de265_image *img;
   de265_error ret = DE265_OK;
+#if !LIBDE265_CHECK_VERSION(2,0,0)
   int more = 0;
+#endif
   de265_PTS pts = (de265_PTS) FRAME_PTS (frame);
   gsize size;
 
@@ -946,7 +1031,7 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
       }
     }
   } else {
-    ret = de265_flush_data (dec->ctx);
+    ret = de265_push_end_of_stream (dec->ctx);
     if (ret != DE265_OK) {
       GST_ELEMENT_ERROR (parse, STREAM, DECODE,
           ("Error while flushing data: %s (code=%d)",
@@ -962,6 +1047,8 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
 #if GST_CHECK_VERSION(1,0,0)
   dec->frame_number = frame->system_frame_number;
 #endif
+
+#if !LIBDE265_CHECK_VERSION(2,0,0)
   do {
     ret = de265_decode (dec->ctx, &more);
   } while (more && ret == DE265_OK);
@@ -984,6 +1071,10 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
               ret), (NULL));
       return GST_FLOW_ERROR;
   }
+#else
+  ret = de265_get_action (dec->ctx, 1);
+  // TODO(fancycode): Evaluate response?
+#endif
 
   while ((ret = de265_get_warning (dec->ctx)) != DE265_OK) {
     GST_ELEMENT_WARNING (parse, STREAM, DECODE,
@@ -993,6 +1084,9 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
   img = de265_get_next_picture (dec->ctx);
   if (img == NULL) {
     // need more data
+#if GST_CHECK_VERSION(1,0,0)
+    gst_video_codec_frame_unref (frame);
+#endif
     return GST_FLOW_OK;
   }
 #if GST_CHECK_VERSION(1,0,0)
@@ -1005,7 +1099,9 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
     gst_buffer_replace (&out_frame->output_buffer, ref->buffer);
     gst_buffer_replace (&ref->buffer, NULL);
     FRAME_PTS (out_frame) = (GstClockTime) de265_get_image_PTS (img);
-    return FINISH_FRAME (parse, out_frame);
+    ret = FINISH_FRAME (parse, out_frame);
+    RELEASE_PICTURE (img);
+    return ret;
   }
 
   GST_VIDEO_CODEC_FRAME_FLAG_UNSET (frame,
@@ -1021,6 +1117,7 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
       bits_per_pixel);
   if (format == GST_VIDEO_FORMAT_UNKNOWN) {
     GST_ERROR_OBJECT (dec, "Unsupported image format");
+    RELEASE_PICTURE (img);
     return GST_FLOW_ERROR;
   }
 
@@ -1029,12 +1126,14 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
       de265_get_image_height (img, 0), format);
   if (result != GST_FLOW_OK) {
     GST_ERROR_OBJECT (dec, "Failed to notify about available image");
+    RELEASE_PICTURE (img);
     return result;
   }
 
   result = ALLOC_OUTPUT_FRAME (parse, frame);
   if (result != GST_FLOW_OK) {
     GST_ERROR_OBJECT (dec, "Failed to allocate output frame");
+    RELEASE_PICTURE (img);
     return result;
   }
 
@@ -1042,6 +1141,7 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
 #if GST_CHECK_VERSION(1,0,0)
   if (!gst_buffer_map (frame->output_buffer, &info, GST_MAP_WRITE)) {
     GST_ERROR_OBJECT (dec, "Failed to map output buffer");
+    RELEASE_PICTURE (img);
     return GST_FLOW_ERROR;
   }
 
@@ -1148,6 +1248,7 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
   gst_buffer_unmap (frame->output_buffer, &info);
 #endif
   FRAME_PTS (frame) = (GstClockTime) de265_get_image_PTS (img);
+  RELEASE_PICTURE (img);
   return FINISH_FRAME (parse, frame);
 
 error_input:
