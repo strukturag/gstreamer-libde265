@@ -251,6 +251,16 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([ ], [ ])], [
 ])
 CFLAGS="$save_CFLAGS"
 
+AC_MSG_CHECKING([to see if compiler understands -Werror=implicit-function-declaration])
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -Werror=implicit-function-declaration"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([ ], [ ])], [
+  AC_MSG_RESULT([yes])
+], [
+  CFLAGS="$save_CFLAGS"
+  AC_MSG_RESULT([no])
+])
+
 dnl set the plugindir where plugins should be installed (for src/Makefile.am)
 if test "x${prefix}" = "x$HOME"; then
   plugindir="$HOME/.gstreamer-$GSTREAMER_VERSION/plugins"
