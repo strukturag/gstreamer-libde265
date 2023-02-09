@@ -35,7 +35,7 @@
 #define DEFAULT_THREAD_COUNT        2
 
 #define parent_class gst_libde265_dec_parent_class
-G_DEFINE_TYPE (GstLibde265Dec, gst_libde265_dec, VIDEO_DECODER_TYPE);
+G_DEFINE_TYPE (GstLibde265Dec, gst_libde265_dec, GST_TYPE_VIDEO_DECODER);
 
 static GstStaticPadTemplate sink_template = GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_SINK,
@@ -92,26 +92,25 @@ static void gst_libde265_dec_set_property (GObject * object, guint prop_id,
 static void gst_libde265_dec_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
-static gboolean gst_libde265_dec_start (VIDEO_DECODER_BASE * parse);
-static gboolean gst_libde265_dec_stop (VIDEO_DECODER_BASE * parse);
-static gboolean gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse,
-    VIDEO_STATE * state);
+static gboolean gst_libde265_dec_start (GstVideoDecoder * parse);
+static gboolean gst_libde265_dec_stop (GstVideoDecoder * parse);
+static gboolean gst_libde265_dec_set_format (GstVideoDecoder * parse,
+    GstVideoCodecState * state);
 #if GST_CHECK_VERSION(1,2,0)
-static gboolean gst_libde265_dec_flush (VIDEO_DECODER_BASE * parse);
+static gboolean gst_libde265_dec_flush (GstVideoDecoder * parse);
 #else
-static gboolean gst_libde265_dec_reset (VIDEO_DECODER_BASE * parse,
-    gboolean hard);
+static gboolean gst_libde265_dec_reset (GstVideoDecoder * parse, gboolean hard);
 #endif
-static GstFlowReturn gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse,
-    VIDEO_FRAME * frame);
-static GstFlowReturn _gst_libde265_image_available (VIDEO_DECODER_BASE * parse,
+static GstFlowReturn gst_libde265_dec_handle_frame (GstVideoDecoder * parse,
+    GstVideoCodecFrame * frame);
+static GstFlowReturn _gst_libde265_image_available (GstVideoDecoder * parse,
     int width, int height, GstVideoFormat format);
 
 static void
 gst_libde265_dec_class_init (GstLibde265DecClass * klass)
 {
   GObjectClass *gobject_class = (GObjectClass *) klass;
-  VIDEO_DECODER_CLASS *decoder_class = VIDEO_DECODER_GET_CLASS (klass);
+  GstVideoDecoderClass *decoder_class = GST_VIDEO_DECODER_CLASS (klass);
   GstElementClass *gstelement_class = GST_ELEMENT_CLASS (klass);
 
   gobject_class->finalize = gst_libde265_dec_finalize;
@@ -350,8 +349,8 @@ _gst_libde265_get_video_format (enum de265_chroma chroma, int bits_per_pixel)
  */
 struct GstLibde265FrameRef
 {
-  VIDEO_DECODER_BASE *decoder;
-  VIDEO_FRAME *frame;
+  GstVideoDecoder *decoder;
+  GstVideoCodecFrame *frame;
   GstVideoFrame vframe;
   GstBuffer *buffer;
   int mapped;
@@ -379,7 +378,7 @@ static void
 gst_libde265_dec_release_frame_ref (struct GstLibde265FrameRef *ref)
 {
   if (ref->mapped) {
-    gst_video_frame_unmap (&ref->vframe);
+    gst_GstVideoCodecFrame_unmap (&ref->vframe);
   }
   gst_video_codec_frame_unref (ref->frame);
   gst_buffer_replace (&ref->buffer, NULL);
@@ -390,12 +389,12 @@ static int
 gst_libde265_dec_get_buffer (de265_decoder_context * ctx,
     struct de265_image_spec *spec, struct de265_image *img, void *userdata)
 {
-  VIDEO_DECODER_BASE *base = (VIDEO_DECODER_BASE *) userdata;
+  GstVideoDecoder *base = (GstVideoDecoder *) userdata;
   GstLibde265Dec *dec = GST_LIBDE265_DEC (base);
-  VIDEO_FRAME *frame;
+  GstVideoCodecFrame *frame;
   int i;
 
-  frame = GET_FRAME (base, dec->frame_number);
+  frame = gst_video_decoder_get_frame (base, dec->frame_number);
   if (G_UNLIKELY (frame == NULL)) {
     // should not happen...
     GST_WARNING_OBJECT (base, "Couldn't get codec frame !");
@@ -452,7 +451,8 @@ gst_libde265_dec_get_buffer (de265_decoder_context * ctx,
     goto fallback;
   }
 
-  ret = ALLOC_OUTPUT_FRAME (GST_VIDEO_DECODER (dec), frame);
+  ret =
+      gst_video_decoder_allocate_output_frame (GST_VIDEO_DECODER (dec), frame);
   if (G_UNLIKELY (ret != GST_FLOW_OK)) {
     GST_ERROR_OBJECT (dec, "Failed to allocate output buffer");
     goto fallback;
@@ -468,35 +468,35 @@ gst_libde265_dec_get_buffer (de265_decoder_context * ctx,
   gst_buffer_replace (&frame->output_buffer, NULL);
 
   GstVideoInfo *info = &dec->output_state->info;
-  if (!gst_video_frame_map (&ref->vframe, info, ref->buffer, GST_MAP_READWRITE)) {
+  if (!gst_GstVideoCodecFrame_map (&ref->vframe, info, ref->buffer, GST_MAP_READWRITE)) {
     GST_ERROR_OBJECT (dec, "Failed to map frame output buffer");
     goto error;
   }
 
   ref->mapped = TRUE;
-  if (GST_VIDEO_FRAME_PLANE_STRIDE (&ref->vframe,
-          0) < width * GST_VIDEO_FRAME_COMP_PSTRIDE (&ref->vframe, 0)) {
+  if (GST_GstVideoCodecFrame_PLANE_STRIDE (&ref->vframe,
+          0) < width * GST_GstVideoCodecFrame_COMP_PSTRIDE (&ref->vframe, 0)) {
     GST_DEBUG_OBJECT (dec, "plane 0: pitch too small (%d/%d*%d)",
-        GST_VIDEO_FRAME_PLANE_STRIDE (&ref->vframe, 0), width,
-        GST_VIDEO_FRAME_COMP_PSTRIDE (&ref->vframe, 0));
+        GST_GstVideoCodecFrame_PLANE_STRIDE (&ref->vframe, 0), width,
+        GST_GstVideoCodecFrame_COMP_PSTRIDE (&ref->vframe, 0));
     goto error;
   }
 
-  if (GST_VIDEO_FRAME_COMP_HEIGHT (&ref->vframe, 0) < height) {
+  if (GST_GstVideoCodecFrame_COMP_HEIGHT (&ref->vframe, 0) < height) {
     GST_DEBUG_OBJECT (dec, "plane 0: lines too few (%d/%d)",
-        GST_VIDEO_FRAME_COMP_HEIGHT (&ref->vframe, 0), height);
+        GST_GstVideoCodecFrame_COMP_HEIGHT (&ref->vframe, 0), height);
     goto error;
   }
 
   for (i = 0; i < 3; i++) {
-    int stride = GST_VIDEO_FRAME_PLANE_STRIDE (&ref->vframe, i);
+    int stride = GST_GstVideoCodecFrame_PLANE_STRIDE (&ref->vframe, i);
     if (stride % spec->alignment) {
       GST_DEBUG_OBJECT (dec, "plane %d: pitch not aligned (%d%%%d)",
           i, stride, spec->alignment);
       goto error;
     }
 
-    uint8_t *data = GST_VIDEO_FRAME_PLANE_DATA (&ref->vframe, i);
+    uint8_t *data = GST_GstVideoCodecFrame_PLANE_DATA (&ref->vframe, i);
     if ((uintptr_t) (data) % spec->alignment) {
       GST_DEBUG_OBJECT (dec, "plane %d not aligned", i);
       goto error;
@@ -518,7 +518,7 @@ static void
 gst_libde265_dec_release_buffer (de265_decoder_context * ctx,
     struct de265_image *img, void *userdata)
 {
-  VIDEO_DECODER_BASE *base = (VIDEO_DECODER_BASE *) userdata;
+  GstVideoDecoder *base = (GstVideoDecoder *) userdata;
   struct GstLibde265FrameRef *ref =
       (struct GstLibde265FrameRef *) de265_get_image_plane_user_data (img, 0);
   if (ref == NULL) {
@@ -531,7 +531,7 @@ gst_libde265_dec_release_buffer (de265_decoder_context * ctx,
 }
 
 static gboolean
-gst_libde265_dec_start (VIDEO_DECODER_BASE * parse)
+gst_libde265_dec_start (GstVideoDecoder * parse)
 {
   GstLibde265Dec *dec = GST_LIBDE265_DEC (parse);
   int threads = dec->max_threads;
@@ -581,7 +581,7 @@ gst_libde265_dec_start (VIDEO_DECODER_BASE * parse)
 }
 
 static gboolean
-gst_libde265_dec_stop (VIDEO_DECODER_BASE * parse)
+gst_libde265_dec_stop (GstVideoDecoder * parse)
 {
   GstLibde265Dec *dec = GST_LIBDE265_DEC (parse);
 
@@ -592,10 +592,10 @@ gst_libde265_dec_stop (VIDEO_DECODER_BASE * parse)
 
 #if GST_CHECK_VERSION(1,2,0)
 static gboolean
-gst_libde265_dec_flush (VIDEO_DECODER_BASE * parse)
+gst_libde265_dec_flush (GstVideoDecoder * parse)
 #else
 static gboolean
-gst_libde265_dec_reset (VIDEO_DECODER_BASE * parse, gboolean hard)
+gst_libde265_dec_reset (GstVideoDecoder * parse, gboolean hard)
 #endif
 {
   GstLibde265Dec *dec = GST_LIBDE265_DEC (parse);
@@ -641,7 +641,7 @@ gst_libde265_dec_reset (VIDEO_DECODER_BASE * parse, gboolean hard)
 }
 
 static GstFlowReturn
-_gst_libde265_image_available (VIDEO_DECODER_BASE * parse,
+_gst_libde265_image_available (GstVideoDecoder * parse,
     int width, int height, GstVideoFormat format)
 {
   GstLibde265Dec *dec = GST_LIBDE265_DEC (parse);
@@ -677,7 +677,7 @@ _gst_libde265_image_available (VIDEO_DECODER_BASE * parse,
 }
 
 static gboolean
-gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse, VIDEO_STATE * state)
+gst_libde265_dec_set_format (GstVideoDecoder * parse, GstVideoCodecState * state)
 {
   GstLibde265Dec *dec = GST_LIBDE265_DEC (parse);
 
@@ -816,7 +816,7 @@ gst_libde265_dec_set_format (VIDEO_DECODER_BASE * parse, VIDEO_STATE * state)
 }
 
 static GstFlowReturn
-gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
+gst_libde265_dec_handle_frame (GstVideoDecoder * parse, GstVideoCodecFrame * frame)
 {
   GstLibde265Dec *dec = GST_LIBDE265_DEC (parse);
   uint8_t *frame_data;
@@ -824,7 +824,7 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
   const struct de265_image *img;
   de265_error ret = DE265_OK;
   int more = 0;
-  de265_PTS pts = (de265_PTS) FRAME_PTS (frame);
+  de265_PTS pts = (de265_PTS) (frame->pts);
   gsize size;
 
   GstMapInfo info;
@@ -931,11 +931,11 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
   if (ref != NULL) {
     // decoder is using direct rendering
     gst_video_codec_frame_unref (frame);
-    VIDEO_FRAME *out_frame = gst_video_codec_frame_ref (ref->frame);
+    GstVideoCodecFrame *out_frame = gst_video_codec_frame_ref (ref->frame);
     gst_buffer_replace (&out_frame->output_buffer, ref->buffer);
     gst_buffer_replace (&ref->buffer, NULL);
-    FRAME_PTS (out_frame) = (GstClockTime) de265_get_image_PTS (img);
-    return FINISH_FRAME (parse, out_frame);
+    out_frame->pts = (GstClockTime) de265_get_image_PTS (img);
+    return gst_video_decoder_finish_frame (parse, out_frame);
   }
 
   GST_VIDEO_CODEC_FRAME_FLAG_UNSET (frame,
@@ -961,7 +961,7 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
     return result;
   }
 
-  result = ALLOC_OUTPUT_FRAME (parse, frame);
+  result = gst_video_decoder_allocate_output_frame (parse, frame);
   if (result != GST_FLOW_OK) {
     GST_ERROR_OBJECT (dec, "Failed to allocate output frame");
     return result;
@@ -1068,8 +1068,8 @@ gst_libde265_dec_handle_frame (VIDEO_DECODER_BASE * parse, VIDEO_FRAME * frame)
 
   gst_buffer_unmap (frame->output_buffer, &info);
 
-  FRAME_PTS (frame) = (GstClockTime) de265_get_image_PTS (img);
-  return FINISH_FRAME (parse, frame);
+  frame->pts = (GstClockTime) de265_get_image_PTS (img);
+  return gst_video_decoder_finish_frame (parse, frame);
 
 error_input:
   gst_buffer_unmap (frame->input_buffer, &info);

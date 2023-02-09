@@ -27,20 +27,7 @@
 #endif
 
 #include <gst/gst.h>
-    #include <gst/video/gstvideodecoder.h>
-
-    #define VIDEO_DECODER_BASE      GstVideoDecoder
-    #define VIDEO_DECODER_CLASS     GstVideoDecoderClass
-    #define VIDEO_DECODER_TYPE      GST_TYPE_VIDEO_DECODER
-    #define VIDEO_DECODER_GET_CLASS GST_VIDEO_DECODER_CLASS
-    #define VIDEO_FRAME             GstVideoCodecFrame
-    #define VIDEO_STATE             GstVideoCodecState
-    #define NEED_DATA_RESULT        GST_VIDEO_DECODER_FLOW_NEED_DATA
-    #define GET_FRAME               gst_video_decoder_get_frame
-    #define HAVE_FRAME              gst_video_decoder_have_frame
-    #define FINISH_FRAME            gst_video_decoder_finish_frame
-    #define ALLOC_OUTPUT_FRAME      gst_video_decoder_allocate_output_frame
-    #define FRAME_PTS(frame)        ((frame)->pts)
+#include <gst/video/gstvideodecoder.h>
 
 #include <libde265/de265.h>
 
@@ -60,7 +47,7 @@ typedef enum {
 } GstLibde265DecMode;
 
 typedef struct _GstLibde265Dec {
-    VIDEO_DECODER_BASE      parent;
+    GstVideoDecoder      parent;
 
     /* private */
     de265_decoder_context   *ctx;
@@ -81,7 +68,7 @@ typedef struct _GstLibde265Dec {
 } GstLibde265Dec;
 
 typedef struct _GstLibde265DecClass {
-    VIDEO_DECODER_CLASS     parent;
+  GstVideoDecoderClass     parent;
 } GstLibde265DecClass;
 
 G_END_DECLS
