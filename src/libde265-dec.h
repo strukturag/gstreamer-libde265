@@ -27,7 +27,6 @@
 #endif
 
 #include <gst/gst.h>
-#if GST_CHECK_VERSION(1,0,0)
     #include <gst/video/gstvideodecoder.h>
 
     #define VIDEO_DECODER_BASE      GstVideoDecoder
@@ -42,22 +41,6 @@
     #define FINISH_FRAME            gst_video_decoder_finish_frame
     #define ALLOC_OUTPUT_FRAME      gst_video_decoder_allocate_output_frame
     #define FRAME_PTS(frame)        ((frame)->pts)
-#else
-    #include <gst/video/gstbasevideodecoder.h>
-
-    #define VIDEO_DECODER_BASE      GstBaseVideoDecoder
-    #define VIDEO_DECODER_CLASS     GstBaseVideoDecoderClass
-    #define VIDEO_DECODER_TYPE      GST_TYPE_BASE_VIDEO_DECODER
-    #define VIDEO_DECODER_GET_CLASS GST_BASE_VIDEO_DECODER_CLASS
-    #define VIDEO_FRAME             GstVideoFrame
-    #define VIDEO_STATE             GstVideoState
-    #define NEED_DATA_RESULT        GST_BASE_VIDEO_DECODER_FLOW_NEED_DATA
-    #define GET_FRAME               gst_base_video_decoder_get_frame
-    #define HAVE_FRAME              gst_base_video_decoder_have_frame
-    #define FINISH_FRAME            gst_base_video_decoder_finish_frame
-    #define ALLOC_OUTPUT_FRAME      gst_base_video_decoder_alloc_src_frame
-    #define FRAME_PTS(frame)        ((frame)->presentation_timestamp)
-#endif
 
 #include <libde265/de265.h>
 
@@ -91,11 +74,10 @@ typedef struct _GstLibde265Dec {
     int                     buffer_full;
     void                    *codec_data;
     int                     codec_data_size;
-#if GST_CHECK_VERSION(1,0,0)
+
     int                     frame_number;
     GstVideoCodecState      *input_state;
     GstVideoCodecState      *output_state;
-#endif
 } GstLibde265Dec;
 
 typedef struct _GstLibde265DecClass {

@@ -60,15 +60,7 @@ plugin_init (GstPlugin * plugin)
 }
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR, GST_VERSION_MINOR,
-#if GST_CHECK_VERSION(1,0,0)
     libde265,
-#else
-    "gstlibde265",
-#endif
     "HEVC/H.265 decoder using libde265", plugin_init, VERSION, "LGPL",
-#if GST_CHECK_VERSION(1,0,0)
     "gstreamer1.0-libde265",
-#else
-    "gstreamer0.10-libde265",
-#endif
     "https://github.com/strukturag/gstreamer-libde265/")
