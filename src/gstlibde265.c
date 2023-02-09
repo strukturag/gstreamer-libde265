@@ -63,7 +63,7 @@ GST_PLUGIN_DEFINE (GST_VERSION_MAJOR, GST_VERSION_MINOR,
 #if GST_CHECK_VERSION(1,0,0)
     libde265,
 #else
-    "libde265",
+    "gstlibde265",
 #endif
     "HEVC/H.265 decoder using libde265", plugin_init, VERSION, "LGPL",
 #if GST_CHECK_VERSION(1,0,0)
