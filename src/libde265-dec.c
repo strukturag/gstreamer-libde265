@@ -938,9 +938,11 @@ gst_libde265_dec_handle_frame(GstVideoDecoder* parse, GstVideoCodecFrame* frame)
 
     case DE265_ERROR_IMAGE_BUFFER_FULL:
       dec->buffer_full = 1;
+      /*
       if ((img = de265_peek_next_picture(dec->ctx)) == NULL) {
         return GST_FLOW_OK;
       }
+       */
       break;
 
     default:
@@ -1179,6 +1181,7 @@ gst_libde265_dec_handle_frame(GstVideoDecoder* parse, GstVideoCodecFrame* frame)
 
   error_input:
   gst_buffer_unmap(frame->input_buffer, &info);
+
   return GST_FLOW_ERROR;
 }
 
