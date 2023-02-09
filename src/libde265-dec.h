@@ -2,6 +2,7 @@
  * GStreamer HEVC/H.265 video codec.
  *
  * Copyright (c) 2014 struktur AG, Joachim Bauch <bauch@struktur.de>
+ * Copyright (c) 2023 Dirk Farin <dirk.farin@gmail.com>
  *
  * This file is part of gstreamer-libde265.
  *
@@ -29,7 +30,7 @@
 #include <gst/gst.h>
 #include <gst/video/gstvideodecoder.h>
 
-#include <libde265/de265.h>
+#include <libde265/de265-multilayer.h>
 
 G_BEGIN_DECLS
 
@@ -50,9 +51,10 @@ typedef struct _GstLibde265Dec {
     GstVideoDecoder      parent;
 
     /* private */
-    de265_decoder_context*  ctx;
+    de265_audecoder*        ctx;
     int                     width;
     int                     height;
+    int                     with_alpha;  // bool
     GstLibde265DecMode      mode;
     int                     length_size;
     int                     fps_n;

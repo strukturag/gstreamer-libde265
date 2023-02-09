@@ -2,6 +2,7 @@
  * GStreamer HEVC/H.265 video codec.
  *
  * Copyright (c) 2014 struktur AG, Joachim Bauch <bauch@struktur.de>
+ * Copyright (c) 2023 Dirk Farin <dirk.farin@gmail.com>
  *
  * This file is part of gstreamer-libde265.
  *
