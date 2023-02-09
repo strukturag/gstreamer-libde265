@@ -26,13 +26,8 @@
 
 #include "libde265-dec.h"
 
-#if !defined(LIBDE265_NUMERIC_VERSION) || LIBDE265_NUMERIC_VERSION < 0x00070000
-#error "You need libde265 0.7 or newer to compile this plugin."
-#endif
-
-#if LIBDE265_NUMERIC_VERSION < 0x01000000
-// libde265 < 1.0 only supported 8 bits per pixel
-#define de265_get_bits_per_pixel(image, plane) 8
+#if !defined(LIBDE265_NUMERIC_VERSION) || LIBDE265_NUMERIC_VERSION < 0x01000000
+#error "You need libde265 1.0.0 or newer to compile this plugin."
 #endif
 
 // use two decoder threads if no information about
