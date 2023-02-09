@@ -59,7 +59,7 @@ typedef struct _GstLibde265Dec {
     int                     fps_d;
     int                     max_threads;
     int                     buffer_full;
-    void                    *codec_data;
+    void*                   codec_data;
     int                     codec_data_size;
 
     int                     frame_number;

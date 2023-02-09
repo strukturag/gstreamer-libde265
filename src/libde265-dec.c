@@ -106,7 +106,7 @@ static gboolean gst_libde265_dec_stop(GstVideoDecoder* parse);
 static gboolean gst_libde265_dec_set_format(GstVideoDecoder* parse,
                                             GstVideoCodecState* state);
 
-static gboolean gst_libde265_dec_flush (GstVideoDecoder * parse);
+static gboolean gst_libde265_dec_flush(GstVideoDecoder* parse);
 
 static GstFlowReturn gst_libde265_dec_handle_frame(GstVideoDecoder* parse,
                                                    GstVideoCodecFrame* frame);
@@ -144,7 +144,7 @@ gst_libde265_dec_class_init(GstLibde265DecClass* klass)
   decoder_class->start = GST_DEBUG_FUNCPTR(gst_libde265_dec_start);
   decoder_class->stop = GST_DEBUG_FUNCPTR(gst_libde265_dec_stop);
   decoder_class->set_format = GST_DEBUG_FUNCPTR(gst_libde265_dec_set_format);
-  decoder_class->flush = GST_DEBUG_FUNCPTR (gst_libde265_dec_flush);
+  decoder_class->flush = GST_DEBUG_FUNCPTR(gst_libde265_dec_flush);
   decoder_class->handle_frame =
       GST_DEBUG_FUNCPTR(gst_libde265_dec_handle_frame);
 
@@ -387,7 +387,7 @@ static void
 gst_libde265_dec_release_frame_ref(struct GstLibde265FrameRef* ref)
 {
   if (ref->mapped) {
-    gst_GstVideoCodecFrame_unmap(&ref->vframe);
+    gst_video_frame_unmap(&ref->vframe);
   }
   gst_video_codec_frame_unref(ref->frame);
   gst_buffer_replace(&ref->buffer, NULL);
@@ -476,35 +476,35 @@ gst_libde265_dec_get_buffer(de265_decoder_context* ctx,
   gst_buffer_replace(&frame->output_buffer, NULL);
 
   GstVideoInfo* info = &dec->output_state->info;
-  if (!gst_GstVideoCodecFrame_map(&ref->vframe, info, ref->buffer, GST_MAP_READWRITE)) {
+  if (!gst_video_frame_map(&ref->vframe, info, ref->buffer, GST_MAP_READWRITE)) {
     GST_ERROR_OBJECT(dec, "Failed to map frame output buffer");
     goto error;
   }
 
   ref->mapped = TRUE;
-  if (GST_GstVideoCodecFrame_PLANE_STRIDE(&ref->vframe,
-                                          0) < width * GST_GstVideoCodecFrame_COMP_PSTRIDE(&ref->vframe, 0)) {
+  if (GST_VIDEO_FRAME_PLANE_STRIDE(&ref->vframe,
+                                   0) < width * GST_VIDEO_FRAME_COMP_PSTRIDE(&ref->vframe, 0)) {
     GST_DEBUG_OBJECT(dec, "plane 0: pitch too small (%d/%d*%d)",
-                     GST_GstVideoCodecFrame_PLANE_STRIDE(&ref->vframe, 0), width,
-                     GST_GstVideoCodecFrame_COMP_PSTRIDE(&ref->vframe, 0));
+                     GST_VIDEO_FRAME_PLANE_STRIDE(&ref->vframe, 0), width,
+                     GST_VIDEO_FRAME_COMP_PSTRIDE(&ref->vframe, 0));
     goto error;
   }
 
-  if (GST_GstVideoCodecFrame_COMP_HEIGHT(&ref->vframe, 0) < height) {
+  if (GST_VIDEO_FRAME_COMP_HEIGHT(&ref->vframe, 0) < height) {
     GST_DEBUG_OBJECT(dec, "plane 0: lines too few (%d/%d)",
-                     GST_GstVideoCodecFrame_COMP_HEIGHT(&ref->vframe, 0), height);
+                     GST_VIDEO_FRAME_COMP_HEIGHT(&ref->vframe, 0), height);
     goto error;
   }
 
   for (i = 0; i < 3; i++) {
-    int stride = GST_GstVideoCodecFrame_PLANE_STRIDE(&ref->vframe, i);
+    int stride = GST_VIDEO_FRAME_PLANE_STRIDE(&ref->vframe, i);
     if (stride % spec->alignment) {
       GST_DEBUG_OBJECT(dec, "plane %d: pitch not aligned (%d%%%d)",
                        i, stride, spec->alignment);
       goto error;
     }
 
-    uint8_t* data = GST_GstVideoCodecFrame_PLANE_DATA(&ref->vframe, i);
+    uint8_t* data = GST_VIDEO_FRAME_PLANE_DATA(&ref->vframe, i);
     if ((uintptr_t)(data) % spec->alignment) {
       GST_DEBUG_OBJECT(dec, "plane %d not aligned", i);
       goto error;
@@ -598,7 +598,7 @@ gst_libde265_dec_stop(GstVideoDecoder* parse)
   return TRUE;
 }
 
-static gboolean gst_libde265_dec_flush (GstVideoDecoder * parse)
+static gboolean gst_libde265_dec_flush(GstVideoDecoder* parse)
 {
   GstLibde265Dec * dec = GST_LIBDE265_DEC (parse);
 
