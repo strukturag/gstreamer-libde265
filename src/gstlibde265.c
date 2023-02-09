@@ -61,7 +61,7 @@ plugin_init (GstPlugin * plugin)
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR, GST_VERSION_MINOR,
 #if GST_CHECK_VERSION(1,0,0)
-    gstlibde265,
+    libde265,
 #else
     "gstlibde265",
 #endif
