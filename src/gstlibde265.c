@@ -30,7 +30,7 @@
 
 #include "libde265-dec.h"
 
-#if !GST_CHECK_VERSION(1,4,0)
+#if !GST_CHECK_VERSION(1, 4, 0)
 GST_DEBUG_CATEGORY_EXTERN (matroskareadcommon_debug);
 
 void gst_matroska_register_tags (void);
@@ -40,12 +40,12 @@ gboolean gst_isomp4_plugin_init (GstPlugin * plugin);
 #endif
 
 static gboolean
-plugin_init (GstPlugin * plugin)
+plugin_init(GstPlugin* plugin)
 {
   gboolean ret = TRUE;
 
-  gst_pb_utils_init ();
-#if !GST_CHECK_VERSION(1,4,0)
+  gst_pb_utils_init();
+#if !GST_CHECK_VERSION(1, 4, 0)
   gst_matroska_register_tags ();
 
   GST_DEBUG_CATEGORY_INIT (matroskareadcommon_debug, "matroskareadcommon", 0,
@@ -55,12 +55,12 @@ plugin_init (GstPlugin * plugin)
   ret &= gst_matroska_parse_plugin_init (plugin);
   ret &= gst_isomp4_plugin_init (plugin);
 #endif
-  ret &= gst_libde265_dec_plugin_init (plugin);
+  ret &= gst_libde265_dec_plugin_init(plugin);
   return ret;
 }
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR, GST_VERSION_MINOR,
     libde265,
-    "HEVC/H.265 decoder using libde265", plugin_init, VERSION, "LGPL",
-    "gstreamer1.0-libde265",
-    "https://github.com/strukturag/gstreamer-libde265/")
+"HEVC/H.265 decoder using libde265", plugin_init, VERSION, "LGPL",
+"gstreamer1.0-libde265",
+"https://github.com/strukturag/gstreamer-libde265/")

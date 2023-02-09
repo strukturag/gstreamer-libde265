@@ -50,7 +50,7 @@ typedef struct _GstLibde265Dec {
     GstVideoDecoder      parent;
 
     /* private */
-    de265_decoder_context   *ctx;
+    de265_decoder_context*  ctx;
     int                     width;
     int                     height;
     GstLibde265DecMode      mode;
@@ -63,8 +63,8 @@ typedef struct _GstLibde265Dec {
     int                     codec_data_size;
 
     int                     frame_number;
-    GstVideoCodecState      *input_state;
-    GstVideoCodecState      *output_state;
+    GstVideoCodecState*     input_state;
+    GstVideoCodecState*     output_state;
 } GstLibde265Dec;
 
 typedef struct _GstLibde265DecClass {
