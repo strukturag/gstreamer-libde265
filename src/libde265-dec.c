@@ -30,6 +30,10 @@
 #error "You need libde265 1.0.0 or newer to compile this plugin."
 #endif
 
+#if !GST_CHECK_VERSION(1, 4, 0)
+#error "You need gstreamer 1.4.0 or newer to compile this plugin."
+#endif
+
 // use two decoder threads if no information about
 // available CPU cores can be retrieved
 #define DEFAULT_THREAD_COUNT        2
@@ -102,13 +106,7 @@ static gboolean gst_libde265_dec_stop(GstVideoDecoder* parse);
 static gboolean gst_libde265_dec_set_format(GstVideoDecoder* parse,
                                             GstVideoCodecState* state);
 
-#if GST_CHECK_VERSION(1, 2, 0)
 static gboolean gst_libde265_dec_flush (GstVideoDecoder * parse);
-#else
-
-static gboolean gst_libde265_dec_reset(GstVideoDecoder* parse, gboolean hard);
-
-#endif
 
 static GstFlowReturn gst_libde265_dec_handle_frame(GstVideoDecoder* parse,
                                                    GstVideoCodecFrame* frame);
@@ -146,11 +144,7 @@ gst_libde265_dec_class_init(GstLibde265DecClass* klass)
   decoder_class->start = GST_DEBUG_FUNCPTR(gst_libde265_dec_start);
   decoder_class->stop = GST_DEBUG_FUNCPTR(gst_libde265_dec_stop);
   decoder_class->set_format = GST_DEBUG_FUNCPTR(gst_libde265_dec_set_format);
-#if GST_CHECK_VERSION(1, 2, 0)
   decoder_class->flush = GST_DEBUG_FUNCPTR (gst_libde265_dec_flush);
-#else
-  decoder_class->reset = GST_DEBUG_FUNCPTR(gst_libde265_dec_reset);
-#endif
   decoder_class->handle_frame =
       GST_DEBUG_FUNCPTR(gst_libde265_dec_handle_frame);
 
@@ -604,14 +598,7 @@ gst_libde265_dec_stop(GstVideoDecoder* parse)
   return TRUE;
 }
 
-#if GST_CHECK_VERSION(1, 2, 0)
-static gboolean
-gst_libde265_dec_flush (GstVideoDecoder * parse)
-#else
-
-static gboolean
-gst_libde265_dec_reset(GstVideoDecoder* parse, gboolean hard)
-#endif
+static gboolean gst_libde265_dec_flush (GstVideoDecoder * parse)
 {
   GstLibde265Dec * dec = GST_LIBDE265_DEC (parse);
 

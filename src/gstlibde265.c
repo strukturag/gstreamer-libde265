@@ -30,14 +30,6 @@
 
 #include "libde265-dec.h"
 
-#if !GST_CHECK_VERSION(1, 4, 0)
-GST_DEBUG_CATEGORY_EXTERN (matroskareadcommon_debug);
-
-void gst_matroska_register_tags (void);
-gboolean gst_matroska_demux_plugin_init (GstPlugin * plugin);
-gboolean gst_matroska_parse_plugin_init (GstPlugin * plugin);
-gboolean gst_isomp4_plugin_init (GstPlugin * plugin);
-#endif
 
 static gboolean
 plugin_init(GstPlugin* plugin)
@@ -45,16 +37,7 @@ plugin_init(GstPlugin* plugin)
   gboolean ret = TRUE;
 
   gst_pb_utils_init();
-#if !GST_CHECK_VERSION(1, 4, 0)
-  gst_matroska_register_tags ();
 
-  GST_DEBUG_CATEGORY_INIT (matroskareadcommon_debug, "matroskareadcommon", 0,
-      "Matroska demuxer/parser shared debug");
-
-  ret = gst_matroska_demux_plugin_init (plugin);
-  ret &= gst_matroska_parse_plugin_init (plugin);
-  ret &= gst_isomp4_plugin_init (plugin);
-#endif
   ret &= gst_libde265_dec_plugin_init(plugin);
   return ret;
 }
