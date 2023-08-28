@@ -43,8 +43,11 @@ Various libraries are required to build gstreamer-libde265:
 - `libgstreamer-plugins-good1.0-dev` (only for gstreamer1.0)
 - `libgstreamer-plugins-bad1.0-dev` (only for gstreamer1.0)
 
-Prebuilt packages for Ubuntu are available at
+Prebuilt packages for old versions of Ubuntu are available at
 https://launchpad.net/~strukturag/+archive/libde265
+
+Please note that the PPA is no longer maintained since the plugin is part of
+upstream GStreamer.
 
 ## Running
 
