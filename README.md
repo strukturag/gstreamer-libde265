@@ -4,6 +4,13 @@ Powered by libde265
 
 ![powered by libde265](doc/libde265.png)
 
+## Deprecated
+
+The libde265 plugin has been integrated in upstream GStreamer:
+https://gstreamer.freedesktop.org/documentation/de265/index.html
+
+Using code from this repository therefore should no longer be necessary.
+
 ## Building
 
 [![Build Status](https://travis-ci.org/strukturag/gstreamer-libde265.png?branch=master)](https://travis-ci.org/strukturag/gstreamer-libde265)
